@@ -11,6 +11,7 @@
 #include "brave/common/pref_names.h"
 #include "brave/components/brave_sync/features.h"
 #include "chrome/common/chrome_features.h"
+#include "chrome/common/pref_names.h"
 #include "components/prefs/pref_service.h"
 #include "components/sync/driver/sync_driver_switches.h"
 #include "content/public/browser/render_frame_host.h"
@@ -114,8 +115,8 @@ void BraveBrowserMainParts::PostProfileInit() {
 
 #if defined(OS_ANDROID)
   if (profile()->GetPrefs()->GetBoolean(kBackgroundVideoPlaybackEnabled)) {
-    content::RenderFrameHost::AllowInjectingJavaScript();
     auto* command_line = base::CommandLine::ForCurrentProcess();
+    content::RenderFrameHost::AllowInjectingJavaScript();
     command_line->AppendSwitch(switches::kDisableMediaSuspend);
   }
 #endif

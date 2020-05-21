@@ -40,13 +40,7 @@ void RegisterProfilePrefs(bool is_signin_profile,
   // Disable spell check service
   registry->SetDefaultPrefValue(
       spellcheck::prefs::kSpellCheckUseSpellingService, base::Value(false));
-
-  // Make sure sign into Brave is not enabled
-  // The older kSigninAllowed is deprecated and only in use in Android until
-  // C71.
-  registry->SetDefaultPrefValue(prefs::kSigninAllowedOnNextStartup,
-                                base::Value(false));
-
+ 
 #if defined(OS_LINUX)
   // Use brave theme by default instead of gtk theme.
   registry->SetDefaultPrefValue(prefs::kUsesSystemTheme, base::Value(false));
@@ -72,6 +66,14 @@ std::unique_ptr<sync_preferences::PrefServiceSyncable> CreatePrefService(
         g_browser_process->profile_manager()->GetProfileByPath(original_path);
     DCHECK(original_profile);
     PrefStore* extension_pref_store = nullptr;
+    
+    // Make sure sign into Brave is not enabled
+    // The older kSigninAllowed is deprecated and only in use in Android until
+    // C71.
+    // auto googleLogin = original_profile->GetPrefs()->GetBoolean(kGoogleLoginControlType);
+    //original_profile->GetPrefs()->SetBoolean(prefs::kSigninAllowedOnNextStartup,
+    //                            false);
+
 #if BUILDFLAG(ENABLE_EXTENSIONS)
     extension_pref_store = new ExtensionPrefStore(
         ExtensionPrefValueMapFactory::GetForBrowserContext(original_profile),
