@@ -21,6 +21,7 @@
 - (std::vector<std::string>)getUserModelLanguages;
 - (bool)isAdsEnabled;
 - (bool)shouldAllowAdConversionTracking;
+- (bool)shouldAllowSubdivisionAdTargeting;
 - (bool)isForeground;
 - (bool)canShowBackgroundNotifications;
 - (bool)isNetworkConnectionAvailable;
