@@ -734,6 +734,10 @@ class LedgerImpl : public ledger::Ledger {
       const std::string& order_id,
       ledger::GetSKUTransactionCallback callback);
 
+  virtual void GetReservedUnblindedTokens(
+      const std::string& redeem_id,
+      ledger::GetUnblindedTokenListCallback callback);
+
   virtual void GetSpendableUnblindedTokensByBatchTypes(
       const std::vector<ledger::CredsBatchType>& batch_types,
       ledger::GetUnblindedTokenListCallback callback);

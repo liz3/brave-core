@@ -591,6 +591,12 @@ void Database::GetSpendableUnblindedTokensByTriggerIds(
   unblinded_token_->GetSpendableRecordsByTriggerIds(trigger_ids, callback);
 }
 
+void Database::GetReservedUnblindedTokens(
+  const std::string& redeem_id,
+    ledger::GetUnblindedTokenListCallback callback) {
+  unblinded_token_->GetReservedRecordList(redeem_id, callback);
+}
+
 void Database::GetSpendableUnblindedTokensByBatchTypes(
     const std::vector<ledger::CredsBatchType>& batch_types,
     ledger::GetUnblindedTokenListCallback callback) {

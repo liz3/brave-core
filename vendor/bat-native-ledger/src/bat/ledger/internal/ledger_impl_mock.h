@@ -523,6 +523,10 @@ class MockLedgerImpl : public LedgerImpl {
 
   MOCK_METHOD1(GetCreateScript, void(ledger::GetCreateScriptCallback callback));
 
+  MOCK_METHOD2(GetReservedUnblindedTokens, void(
+      const std::string&,
+      ledger::GetUnblindedTokenListCallback));
+
   MOCK_METHOD2(GetSpendableUnblindedTokensByBatchTypes, void(
       const std::vector<ledger::CredsBatchType>&,
       ledger::GetUnblindedTokenListCallback));

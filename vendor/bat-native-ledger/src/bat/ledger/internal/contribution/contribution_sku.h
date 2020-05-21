@@ -90,7 +90,7 @@ class ContributionSKU {
       const ledger::SKUTransaction& transaction,
       ledger::TransactionCallback callback);
 
-  void GerOrderMerchant(
+  void GetOrderMerchant(
       ledger::SKUOrderPtr order,
       const braveledger_credentials::CredentialsRedeem& redeem,
       ledger::TransactionCallback callback);
@@ -120,6 +120,10 @@ class ContributionSKU {
       ledger::ContributionInfoPtr contribution,
       ledger::SKUOrderPtr order,
       ledger::ResultCallback callback);
+
+  void RetryPreviousStepSaved(
+      const ledger::Result result,
+      ledger::TransactionCallback callback);
 
   bat_ledger::LedgerImpl* ledger_;  // NOT OWNED
   Contribution* contribution_;   // NOT OWNED

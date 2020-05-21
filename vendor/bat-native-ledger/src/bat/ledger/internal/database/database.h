@@ -394,6 +394,10 @@ class Database {
       const std::vector<std::string>& trigger_ids,
       ledger::GetUnblindedTokenListCallback callback);
 
+  void GetReservedUnblindedTokens(
+      const std::string& redeem_id,
+      ledger::GetUnblindedTokenListCallback callback);
+
   void GetSpendableUnblindedTokensByBatchTypes(
       const std::vector<ledger::CredsBatchType>& batch_types,
       ledger::GetUnblindedTokenListCallback callback);

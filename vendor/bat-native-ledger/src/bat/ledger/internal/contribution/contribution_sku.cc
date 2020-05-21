@@ -318,8 +318,8 @@ void ContributionSKU::Merchant(
       transaction,
       callback);
 
-  ledger_->GetSpendableUnblindedTokensByBatchTypes(
-      {ledger::CredsBatchType::PROMOTION},
+  ledger_->GetReservedUnblindedTokens(
+      transaction.order_id,
       get_callback);
 }
 
@@ -345,8 +345,16 @@ void ContributionSKU::GetUnblindedTokens(
   }
 
   if (current_amount < transaction.amount) {
-    BLOG(0, "Not enough funds");
-    callback(ledger::Result::NOT_ENOUGH_FUNDS, "");
+    BLOG(0, "Not enough funds, retrying previous step");
+    auto save_callback = std::bind(&ContributionSKU::RetryPreviousStepSaved,
+        this,
+        _1,
+        callback);
+
+    ledger_->UpdateContributionInfoStep(
+        transaction.order_id,
+        ledger::ContributionStep::STEP_PREPARE,
+        save_callback);
     return;
   }
 
@@ -356,7 +364,7 @@ void ContributionSKU::GetUnblindedTokens(
   redeem.token_list = token_list;
   redeem.order_id = transaction.order_id;
 
-  auto get_callback = std::bind(&ContributionSKU::GerOrderMerchant,
+  auto get_callback = std::bind(&ContributionSKU::GetOrderMerchant,
       this,
       _1,
       redeem,
@@ -365,7 +373,19 @@ void ContributionSKU::GetUnblindedTokens(
   ledger_->GetSKUOrder(transaction.order_id, get_callback);
 }
 
-void ContributionSKU::GerOrderMerchant(
+void ContributionSKU::RetryPreviousStepSaved(
+    const ledger::Result result,
+    ledger::TransactionCallback callback) {
+  if (result != ledger::Result::LEDGER_OK) {
+    BLOG(0, "Previous step not saved");
+    callback(ledger::Result::LEDGER_ERROR, "");
+    return;
+  }
+
+  callback(ledger::Result::RETRY, "");
+}
+
+void ContributionSKU::GetOrderMerchant(
     ledger::SKUOrderPtr order,
     const braveledger_credentials::CredentialsRedeem& redeem,
     ledger::TransactionCallback callback) {

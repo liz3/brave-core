@@ -54,6 +54,15 @@ class Unblinded {
       const std::string& contribution_id,
       GetContributionInfoAndUnblindedTokensCallback callback);
 
+  void GetContributionInfoAndReservedUnblindedTokens(
+      const std::string& contribution_id,
+      GetContributionInfoAndUnblindedTokensCallback callback);
+
+  void OnReservedUnblindedTokens(
+      ledger::UnblindedTokenList list,
+      const std::string& contribution_id,
+      GetContributionInfoAndUnblindedTokensCallback callback);
+
   void OnGetContributionInfo(
       ledger::ContributionInfoPtr contribution,
       const std::vector<ledger::UnblindedToken>& list,

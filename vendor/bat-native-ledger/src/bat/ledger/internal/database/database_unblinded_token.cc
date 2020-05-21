@@ -649,6 +649,42 @@ void DatabaseUnblindedToken::MarkRecordListAsFree(
   ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
 }
 
+void DatabaseUnblindedToken::GetReservedRecordList(
+    const std::string& redeem_id,
+    ledger::GetUnblindedTokenListCallback callback) {
+  auto transaction = ledger::DBTransaction::New();
+
+  const std::string query = base::StringPrintf(
+      "SELECT ut.token_id, ut.token_value, ut.public_key, ut.value, "
+      "ut.creds_id, ut.expires_at FROM %s as ut "
+      "WHERE ut.redeem_id = ? AND ut.reserved_at != 0",
+      kTableName);
+
+  auto command = ledger::DBCommand::New();
+  command->type = ledger::DBCommand::Type::READ;
+  command->command = query;
+
+  BindString(command.get(), 0, redeem_id);
+
+  command->record_bindings = {
+      ledger::DBCommand::RecordBindingType::INT64_TYPE,
+      ledger::DBCommand::RecordBindingType::STRING_TYPE,
+      ledger::DBCommand::RecordBindingType::STRING_TYPE,
+      ledger::DBCommand::RecordBindingType::DOUBLE_TYPE,
+      ledger::DBCommand::RecordBindingType::STRING_TYPE,
+      ledger::DBCommand::RecordBindingType::INT64_TYPE
+  };
+
+  transaction->commands.push_back(std::move(command));
+
+  auto transaction_callback = std::bind(&DatabaseUnblindedToken::OnGetRecords,
+      this,
+      _1,
+      callback);
+
+  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+}
+
 void DatabaseUnblindedToken::GetSpendableRecordListByBatchTypes(
     const std::vector<ledger::CredsBatchType>& batch_types,
     ledger::GetUnblindedTokenListCallback callback) {

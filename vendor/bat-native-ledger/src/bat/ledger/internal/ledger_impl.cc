@@ -1772,6 +1772,14 @@ void LedgerImpl::GetSKUTransactionByOrderId(
   bat_database_->GetSKUTransactionByOrderId(order_id, callback);
 }
 
+void LedgerImpl::GetReservedUnblindedTokens(
+    const std::string& redeem_id,
+    ledger::GetUnblindedTokenListCallback callback) {
+  bat_database_->GetReservedUnblindedTokens(
+      redeem_id,
+      callback);
+}
+
 void LedgerImpl::GetSpendableUnblindedTokensByBatchTypes(
     const std::vector<ledger::CredsBatchType>& batch_types,
     ledger::GetUnblindedTokenListCallback callback) {
