@@ -2452,18 +2452,18 @@ void RewardsServiceImpl::OnWriteToLogOnFileTaskRunner(
   DCHECK(success);
 }
 
-void RewardsServiceImpl::LoadDiagnosticLog(
-    ledger::OnLoadCallback callback) {
+void RewardsServiceImpl::LoadDiagnosticLog(LoadDiagnosticLogCallback callback) {
   base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
       base::BindOnce(&LoadOnFileTaskRunner, diagnostic_log_path_),
       base::BindOnce(&RewardsServiceImpl::OnLoadDiagnosticLogOnFileTaskRunner,
-          AsWeakPtr(), std::move(callback)));
+          AsWeakPtr(),
+          std::move(callback)));
 }
 
 void RewardsServiceImpl::OnLoadDiagnosticLogOnFileTaskRunner(
-    ledger::OnLoadCallback callback,
+    LoadDiagnosticLogCallback callback,
     const std::string& value) {
-  callback(ledger::Result::LEDGER_OK, value);
+  std::move(callback).Run(value);
 }
 
 void RewardsServiceImpl::Log(

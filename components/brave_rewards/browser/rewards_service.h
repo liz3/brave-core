@@ -121,6 +121,8 @@ using GetAllMonthlyReportIdsCallback =
 using GetAllPromotionsCallback =
     base::OnceCallback<void(const std::vector<brave_rewards::Promotion>&)>;
 
+using LoadDiagnosticLogCallback = base::OnceCallback<void(const std::string&)>;
+
 class RewardsService : public KeyedService {
  public:
   RewardsService();
@@ -326,6 +328,8 @@ class RewardsService : public KeyedService {
       const int line,
       const int verbose_level,
       const std::string& message) = 0;
+
+  virtual void LoadDiagnosticLog(LoadDiagnosticLogCallback callback) = 0;
 
  protected:
   base::ObserverList<RewardsServiceObserver> observers_;

@@ -543,11 +543,10 @@ class RewardsServiceImpl : public RewardsService,
   void OnWriteToLogOnFileTaskRunner(
     const bool success);
 
-  void LoadDiagnosticLog(
-      ledger::OnLoadCallback callback);
+  void LoadDiagnosticLog(LoadDiagnosticLogCallback callback) override;
 
   void OnLoadDiagnosticLogOnFileTaskRunner(
-      ledger::OnLoadCallback callback,
+      LoadDiagnosticLogCallback callback,
       const std::string& value);
 
   void Log(
