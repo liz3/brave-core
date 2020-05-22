@@ -35,6 +35,7 @@ base::Optional<SkColor> MaybeGetDefaultColorForBraveLightUi(int id) {
       return kLightToolbar;
     case ThemeProperties::COLOR_TAB_TEXT:
     case ThemeProperties::COLOR_BOOKMARK_TEXT:
+    case BraveThemeProperties::COLOR_BOOKMARK_BAR_INSTRUCTIONS_TEXT:
     case ThemeProperties::COLOR_BACKGROUND_TAB_TEXT:
     case ThemeProperties::COLOR_TOOLBAR_BUTTON_ICON:
       return kLightToolbarIcon;
@@ -78,6 +79,7 @@ base::Optional<SkColor> MaybeGetDefaultColorForBraveDarkUi(int id) {
       return SkColorSetRGB(0xF3, 0xF3, 0xF3);
     case ThemeProperties::COLOR_BOOKMARK_TEXT:
     case ThemeProperties::COLOR_BACKGROUND_TAB_TEXT:
+    case BraveThemeProperties::COLOR_BOOKMARK_BAR_INSTRUCTIONS_TEXT:
       return SkColorSetRGB(0xFF, 0xFF, 0xFF);
     case ThemeProperties::COLOR_TOOLBAR_BUTTON_ICON:
       return kDarkToolbarIcon;
@@ -121,6 +123,7 @@ base::Optional<SkColor> MaybeGetDefaultColorForPrivateUi(int id) {
       return SkColorSetRGB(0xF3, 0xF3, 0xF3);
     case ThemeProperties::COLOR_BOOKMARK_TEXT:
     case ThemeProperties::COLOR_BACKGROUND_TAB_TEXT:
+    case BraveThemeProperties::COLOR_BOOKMARK_BAR_INSTRUCTIONS_TEXT:
       return SkColorSetRGB(0xFF, 0xFF, 0xFF);
     case ThemeProperties::COLOR_TOOLBAR_BUTTON_ICON:
       return kDarkToolbarIcon;
