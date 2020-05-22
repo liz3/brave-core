@@ -34,6 +34,7 @@
 #include "bat/ads/internal/frequency_capping/exclusion_rules/per_hour_frequency_cap.h"
 #include "bat/ads/internal/frequency_capping/exclusion_rules/per_day_frequency_cap.h"
 #include "bat/ads/internal/frequency_capping/exclusion_rules/conversion_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/country_subdivision_frequency_cap.h"
 #include "bat/ads/internal/frequency_capping/exclusion_rules/daily_cap_frequency_cap.h"
 #include "bat/ads/internal/frequency_capping/exclusion_rules/total_max_frequency_cap.h"
 #include "bat/ads/internal/frequency_capping/permission_rules/minimum_wait_time_frequency_cap.h"
@@ -638,8 +639,6 @@ void AdsImpl::OnPageLoaded(
 
   ExtractPurchaseIntentSignal(url);
 
-  BLOG(1, "*** DEBUG " << country_subdivision_->GetCountrySubdivision());
-
   if (SameSite(url, last_shown_ad_notification_.target_url)) {
     BLOG(1, "Visited URL matches the last shown ad notification");
 
@@ -1102,6 +1101,13 @@ std::vector<std::unique_ptr<ExclusionRule>>
   std::unique_ptr<ExclusionRule> conversion_frequency_cap =
       std::make_unique<ConversionFrequencyCap>(frequency_capping_.get());
   exclusion_rules.push_back(std::move(conversion_frequency_cap));
+
+  // TODO(Moritz Haller): Create only if in regions with subdivision targeting
+  // support?
+  std::unique_ptr<ExclusionRule> country_subdivision_frequency_cap =
+      std::make_unique<CountrySubdivisionFrequencyCap>(
+          frequency_capping_.get(), country_subdivision_.get());
+  exclusion_rules.push_back(std::move(country_subdivision_frequency_cap));
 
   return exclusion_rules;
 }
