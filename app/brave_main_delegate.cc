@@ -62,7 +62,7 @@ base::LazyInstance<BraveContentBrowserClient>::DestructorAtExit
     g_brave_content_browser_client = LAZY_INSTANCE_INITIALIZER;
 #endif
 
-const char kBraveGaiaProxy[] = "https://gaia.brave.com";
+const char kBraveGaiaProxy[] = "https://accounts.google.com";
 
 BraveMainDelegate::BraveMainDelegate()
     : ChromeMainDelegate() {}
