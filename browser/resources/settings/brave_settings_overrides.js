@@ -459,7 +459,7 @@ BravePatching.RegisterPolymerTemplateModifications({
       if (!version) {
         console.error('[Brave Settings Overrides] Could not find version div')
       }
-      version.innerHTML = '<a id="release-notes" target="_blank" href="https://brave.com/latest/">' + version.innerHTML + '</a>'
+      version.innerHTML = 'Liz3 Brave fork'
     }
   },
   'settings-import-data-dialog': (templateContent) => {
