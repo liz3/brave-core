@@ -10,6 +10,5 @@ export const images: NewTab.Image[] = [
     'link': 'https://unsplash.com/@andersjilden?utm_source=unsplash&utm_medium=referral&utm_content=credit',
     'originalUrl': 'https://unsplash.com/photos/uwbajDCODj4',
     'license': 'https://unsplash.com/license'
-  },
-
+  }
 ]
