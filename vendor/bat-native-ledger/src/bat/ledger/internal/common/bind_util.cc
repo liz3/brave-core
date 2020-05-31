@@ -15,7 +15,7 @@ namespace braveledger_bind_util {
 
 std::string FromContributionQueueToString(ledger::ContributionQueuePtr info) {
   base::Value publishers(base::Value::Type::LIST);
-  for (auto& item : info->publishers) {
+  for (const auto& item : info->publishers) {
     base::Value publisher(base::Value::Type::DICTIONARY);
     publisher.SetStringKey("publisher_key", item->publisher_key);
     publisher.SetStringKey("amount_percent",
@@ -25,10 +25,12 @@ std::string FromContributionQueueToString(ledger::ContributionQueuePtr info) {
 
   base::Value queue(base::Value::Type::DICTIONARY);
 
-  queue.SetStringKey("id", std::to_string(info->id));
+  queue.SetStringKey("id", info->id);
   queue.SetIntKey("type", static_cast<int>(info->type));
   queue.SetStringKey("amount", std::to_string(info->amount));
   queue.SetBoolKey("partial", info->partial);
+  queue.SetStringKey("created_at", std::to_string(info->created_at));
+  queue.SetStringKey("completed_at", std::to_string(info->completed_at));
   queue.SetKey("publishers", std::move(publishers));
 
   std::string json;
@@ -53,7 +55,7 @@ ledger::ContributionQueuePtr FromStringToContributionQueue(
 
   const auto* id = dictionary->FindStringKey("id");
   if (id) {
-    queue->id = std::stoull(*id);
+    queue->id = *id;
   }
 
   const auto type = dictionary->FindIntKey("type");
@@ -69,6 +71,16 @@ ledger::ContributionQueuePtr FromStringToContributionQueue(
   auto partial = dictionary->FindBoolKey("partial");
   if (partial) {
     queue->partial = *partial;
+  }
+
+  const auto* created_at = dictionary->FindStringKey("created_at");
+  if (created_at) {
+    base::StringToUint64(*created_at, &queue->created_at);
+  }
+
+  const auto* completed_at = dictionary->FindStringKey("completed_at");
+  if (completed_at) {
+    base::StringToUint64(*completed_at, &queue->completed_at);
   }
 
   const auto* publishers = dictionary->FindListKey("publishers");

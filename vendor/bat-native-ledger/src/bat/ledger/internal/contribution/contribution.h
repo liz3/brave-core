@@ -105,7 +105,9 @@ class Contribution {
       ledger::ResultCallback callback);
 
  private:
-  void StartAutoContribute(const ledger::Result result);
+  void StartAutoContribute(
+      const ledger::Result result,
+      const uint64_t reconcile_stamp);
 
   void ContributionCompletedSaved(const ledger::Result result);
 
@@ -144,9 +146,9 @@ class Contribution {
       ledger::ContributionQueuePtr queue,
       ledger::BalancePtr balance);
 
-  void DeleteContributionQueue(const uint64_t id);
+  void MarkContributionQueueAsComplete(const std::string& id);
 
-  void OnDeleteContributionQueue(const ledger::Result result);
+  void OnMarkContributionQueueAsComplete(const ledger::Result result);
 
   void RetryUnblindedContribution(
       ledger::ContributionInfoPtr contribution,

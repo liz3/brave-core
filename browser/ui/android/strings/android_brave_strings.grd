@@ -4,10 +4,15 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
 -->
 <grit current_release="1" latest_public_release="0" output_all_resource_defines="false">
   <outputs>
+    <output filename="values-af/android_brave_strings.xml" lang="af" type="android" />
     <output filename="values-am/android_brave_strings.xml" lang="am" type="android" />
     <output filename="values-ar/android_brave_strings.xml" lang="ar" type="android" />
+    <output filename="values-as/android_brave_strings.xml" lang="as" type="android" />
+    <output filename="values-az/android_brave_strings.xml" lang="az" type="android" />
+    <output filename="values-be/android_brave_strings.xml" lang="be" type="android" />
     <output filename="values-bg/android_brave_strings.xml" lang="bg" type="android" />
     <output filename="values-bn/android_brave_strings.xml" lang="bn" type="android" />
+    <output filename="values-bs/android_brave_strings.xml" lang="bs" type="android" />
     <output filename="values-ca/android_brave_strings.xml" lang="ca" type="android" />
     <output filename="values-cs/android_brave_strings.xml" lang="cs" type="android" />
     <output filename="values-da/android_brave_strings.xml" lang="da" type="android" />
@@ -18,34 +23,52 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
     <output filename="values-es/android_brave_strings.xml" lang="es" type="android" />
     <output filename="values-es-rUS/android_brave_strings.xml" lang="es-419" type="android" />
     <output filename="values-et/android_brave_strings.xml" lang="et" type="android" />
+    <output filename="values-eu/android_brave_strings.xml" lang="eu" type="android" />
     <output filename="values-fa/android_brave_strings.xml" lang="fa" type="android" />
     <output filename="values-fi/android_brave_strings.xml" lang="fi" type="android" />
     <output filename="values-tl/android_brave_strings.xml" lang="fil" type="android" />
     <output filename="values-fr/android_brave_strings.xml" lang="fr" type="android" />
+    <output filename="values-fr-rCA/android_brave_strings.xml" lang="fr-CA" type="android" />
+    <output filename="values-gl/android_brave_strings.xml" lang="gl" type="android" />
     <output filename="values-gu/android_brave_strings.xml" lang="gu" type="android" />
     <output filename="values-hi/android_brave_strings.xml" lang="hi" type="android" />
     <output filename="values-hr/android_brave_strings.xml" lang="hr" type="android" />
     <output filename="values-hu/android_brave_strings.xml" lang="hu" type="android" />
+    <output filename="values-hy/android_brave_strings.xml" lang="hy" type="android" />
     <output filename="values-in/android_brave_strings.xml" lang="id" type="android" />
+    <output filename="values-is/android_brave_strings.xml" lang="is" type="android" />
     <output filename="values-it/android_brave_strings.xml" lang="it" type="android" />
     <output filename="values-iw/android_brave_strings.xml" lang="iw" type="android" />
     <output filename="values-ja/android_brave_strings.xml" lang="ja" type="android" />
+    <output filename="values-ka/android_brave_strings.xml" lang="ka" type="android" />
+    <output filename="values-kk/android_brave_strings.xml" lang="kk" type="android" />
+    <output filename="values-km/android_brave_strings.xml" lang="km" type="android" />
     <output filename="values-kn/android_brave_strings.xml" lang="kn" type="android" />
     <output filename="values-ko/android_brave_strings.xml" lang="ko" type="android" />
+    <output filename="values-ky/android_brave_strings.xml" lang="ky" type="android" />
+    <output filename="values-lo/android_brave_strings.xml" lang="lo" type="android" />
     <output filename="values-lt/android_brave_strings.xml" lang="lt" type="android" />
     <output filename="values-lv/android_brave_strings.xml" lang="lv" type="android" />
+    <output filename="values-mk/android_brave_strings.xml" lang="mk" type="android" />
     <output filename="values-ml/android_brave_strings.xml" lang="ml" type="android" />
+    <output filename="values-mn/android_brave_strings.xml" lang="mn" type="android" />
     <output filename="values-mr/android_brave_strings.xml" lang="mr" type="android" />
     <output filename="values-ms/android_brave_strings.xml" lang="ms" type="android" />
+    <output filename="values-my/android_brave_strings.xml" lang="my" type="android" />
+    <output filename="values-ne/android_brave_strings.xml" lang="ne" type="android" />
     <output filename="values-nl/android_brave_strings.xml" lang="nl" type="android" />
     <output filename="values-nb/android_brave_strings.xml" lang="no" type="android" />
+    <output filename="values-or/android_brave_strings.xml" lang="or" type="android" />
+    <output filename="values-pa/android_brave_strings.xml" lang="pa" type="android" />
     <output filename="values-pl/android_brave_strings.xml" lang="pl" type="android" />
     <output filename="values-pt-rBR/android_brave_strings.xml" lang="pt-BR" type="android" />
     <output filename="values-pt-rPT/android_brave_strings.xml" lang="pt-PT" type="android" />
     <output filename="values-ro/android_brave_strings.xml" lang="ro" type="android" />
     <output filename="values-ru/android_brave_strings.xml" lang="ru" type="android" />
+    <output filename="values-si/android_brave_strings.xml" lang="si" type="android" />
     <output filename="values-sk/android_brave_strings.xml" lang="sk" type="android" />
     <output filename="values-sl/android_brave_strings.xml" lang="sl" type="android" />
+    <output filename="values-sq/android_brave_strings.xml" lang="sq" type="android" />
     <output filename="values-sr/android_brave_strings.xml" lang="sr" type="android" />
     <output filename="values-sv/android_brave_strings.xml" lang="sv" type="android" />
     <output filename="values-sw/android_brave_strings.xml" lang="sw" type="android" />
@@ -54,9 +77,13 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
     <output filename="values-th/android_brave_strings.xml" lang="th" type="android" />
     <output filename="values-tr/android_brave_strings.xml" lang="tr" type="android" />
     <output filename="values-uk/android_brave_strings.xml" lang="uk" type="android" />
+    <output filename="values-ur/android_brave_strings.xml" lang="ur" type="android" />
+    <output filename="values-uz/android_brave_strings.xml" lang="uz" type="android" />
     <output filename="values-vi/android_brave_strings.xml" lang="vi" type="android" />
     <output filename="values-zh-rCN/android_brave_strings.xml" lang="zh-CN" type="android" />
+    <output filename="values-zh-rHK/android_brave_strings.xml" lang="zh-HK" type="android" />
     <output filename="values-zh-rTW/android_brave_strings.xml" lang="zh-TW" type="android" />
+    <output filename="values-zu/android_brave_strings.xml" lang="zu" type="android" />
   </outputs>
   <translations>
     <file lang="am" path="translations/android_brave_strings_am.xtb" />
@@ -128,7 +155,7 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
         Block Ads and Tracking
       </message>
       <message name="IDS_BRAVE_SHIELDS_HTTPS_EVERYWHERE_SWITCH" desc="Switch for HTTPS Everywhere.">
-        HTTPS Everywhere
+        Upgrade connections to HTTPS
       </message>
       <message name="IDS_BRAVE_SHIELDS_BLOCKS_SCRIPTS_SWITCH" desc="Switch for Block Scripts.">
         Block Scripts
@@ -137,7 +164,7 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
         Fingerprinting Protection
       </message>
       <message name="IDS_BRAVE_SHIELDS_ADS_AND_TRACKERS" desc="Ads and Trackers blocked.">
-        Ads and Trackers
+        Block cross-site trackers
       </message>
       <message name="IDS_BRAVE_SHIELDS_FINGERPRINT_METHODS" desc="Fingerprint methods blocked.">
         Fingerprint Methods
@@ -819,9 +846,9 @@ until they verify, or until 90 days have passed.
       <message name="IDS_NOTIFICATION_CATEGORY_BRAVE_ADS_BACKGROUND" desc="Label for Brave Ads in background.">
         Brave Ads sent when browser is in the background
       </message>
-      <message name="IDS_CLEAR_DOWNLOADS_TITLE" desc="Title for Clear download in Clear Browsing Data dialog">
+      <!-- <message name="IDS_CLEAR_DOWNLOADS_TITLE" desc="Title for Clear download in Clear Browsing Data dialog">
         Download history
-      </message>
+      </message> -->
       <message name="IDS_BRAVE_UI_CONTRIBUTION_TIPS" desc="Title for monthly tips processed notification">
         Contributions &amp; Tips
       </message>
@@ -888,20 +915,11 @@ until they verify, or until 90 days have passed.
       <message name="IDS_PHOTO_BY" desc="Text for image credit for background images on NTP">
         Photo by <ph name="PHOTO_BY">%1$s</ph>
       </message>
-      <message name="IDS_GET_PAID_TO_SEE_ADS">
-        Get paid to see this background image.
-      </message>
-      <message name="IDS_NTP_BRAVE_REWARDS_OFF_TEXT" desc="Text on NTP banner when brave rewrads is off ">
-        You&apos;ll receive 70% of the ad revenue for this private sponsorship which can be used to support web content creators. Turn on Brave Rewards to claim your share.
-      </message>
-      <message name="IDS_TURN_ON_REWARDS" desc="Text for turn on rewards button">
-        Turn on Rewards
-      </message>
       <message name="IDS_TURN_ON_BRAVE_ADS" desc="Text for turn on brave ads button">
         Turn on Brave Ads
       </message>
       <message name="IDS_NTP_TOS_TEXT" desc="Text for term of service on NTP">
-        By turning on Rewards, you agree to the <ph name="TERMS_OF_SERVICE">%1$s</ph>. You can also choose to <ph name="HIDE_SPONSORED_IMAGES">%2$s</ph>.
+        By tapping Earn &amp; Give, you agree to the <ph name="TERMS_OF_SERVICE">%1$s</ph>. 
       </message>
       <message name="IDS_GET_PAID_TO_SEE_IMAGE" desc="Text description for NTP banner.">
         Get paid to see this background image.
@@ -911,18 +929,6 @@ until they verify, or until 90 days have passed.
       </message>
       <message name="IDS_YOU_CAN_SUPPORT_CREATORS" desc="Text description for banner on NTP.">
         You can support web creators with tokens.\nEarn tokens by viewing privacy-respecting ads.
-      </message>
-      <message name="IDS_YOU_ARE_GETTING_PAID" desc="Text title for NTP banner.">
-          You’re getting paid to see this background image.
-      </message>
-      <message name="IDS_BR_ON_ADS_ON_TEXT" desc="Text description for NTP banner.">
-          <ph name="LEARN_MORE">%1$s</ph> about sponsored images in Brave Rewards. You can also choose to <ph name="HIDE_SPONSORED_IMAGES">%2$s</ph>.
-      </message>
-      <message name="IDS_BR_ON_ADS_ON_TEXT2" desc="Text description for NTP banner.">
-          You can also choose to <ph name="HIDE_SPONSORED_IMAGES">%1$s</ph>.
-      </message>
-      <message name="IDS_TURN_ON_BRAVE_ADS_TO_CLAIM" desc="Text description for NTP banner.">
-          Get paid to see this background image. Turn on Brave Ads to claim your share.
       </message>
       <message name="IDS_PREFS_USE_CUSTOM_TABS" desc="Title for closing all tabs closes brave in controls section">
         Open tabs in Custom Tabs
@@ -1052,6 +1058,96 @@ until they verify, or until 90 days have passed.
       </message>
       <message name="IDS_RATE_FEEDBACK_HINT" desc="Text for rate feedback hint.">
         Let us know know how we can improve
+      </message>
+      <message name="IDS_EARN_TOKENS_FOR_VIEWING" desc="Text for brave rewards banner.">
+        Earn tokens for viewing this image and pay it forward to creators. <ph name="LEARN_MORE">%1$s</ph>
+      </message>
+      <message name="IDS_EARN_TOKENS_FOR_VIEWING_TITLE" desc="Title for brave rewards banner.">
+        Earn tokens for viewing this image. Turn on Earn &amp; Give to claim your share.
+      </message>
+      <message name="IDS_YOU_ARE_EARNING_TOKENS" desc="Title for brave rewards banner.">
+        You're earning tokens for viewing this image.\n<ph name="LEARN_MORE">%1$s</ph>
+      </message>
+      <message name="IDS_YOU_ARE_EARNING_TOKENS2" desc="Title for brave rewards banner.">
+        You're earning tokens for viewing this image.
+      </message>
+      <message name="IDS_IM_READY_TO_EARN" desc="Title for brave rewards bottom sheet action.">
+        I'm ready to Earn &amp; Give
+      </message>
+      <message name="IDS_LEARN_MORE_ABOUT_SPONSORED_IMAGES" desc="Title for brave rewards bottom sheet.">
+        Learn more about sponsored images
+      </message>
+      <message name="IDS_SPONSORED_IMAGES_BOTTOM_SHEET_TEXT" desc="Text for SI bottom sheet.">
+        For every sponsored image you view, you receive 70% of the revenue in tokens. With Brave Ads, you're always in control of the ads you see.
+      </message>
+      <message name="IDS_BLOCK_CROSS_SITE_COOKIES" desc="Title for shields option.">
+        Block cross-site cookies
+      </message>
+      <message name="IDS_BLOCK_COOKIES" desc="Title for shields option.">
+        Block Cookies
+      </message>
+      <message name="IDS_BLOCK_COOKIES_TEXT" desc="Text for shields option.">
+        Prevents websites from storing information about your previous visits
+      </message>
+      <message name="IDS_BLOCK_COOKIES_OPTION_1" desc="Title for shields option.">
+        Block all cookies
+      </message>
+      <message name="IDS_BLOCK_COOKIES_OPTION_3" desc="Title for shields option.">
+        Allow all cookies
+      </message>
+      <message name="IDS_BLOCK_CROSS_SITE_FINGERPRINTING" desc="Title for shields option.">
+        Block cross-site fingerprinting
+      </message>
+      <message name="IDS_BLOCK_FINGERPRINTING" desc="Title for shields option.">
+        Block Fingerprinting
+      </message>
+      <message name="IDS_BLOCK_FINGERPRINTING_TEXT" desc="Text for shields option.">
+        Prevents browser from recognizing your device
+      </message>
+      <message name="IDS_BLOCK_FINGERPRINTING_OPTION_1" desc="Title for shields option.">
+        Block all fingerprinting
+      </message>
+      <message name="IDS_BLOCK_FINGERPRINTING_OPTION_3" desc="Title for shields option.">
+        Allow all fingerprinting
+      </message>
+      <message name="IDS_ADS_AND_OTHER_THINGS_BLOCKED" desc="Text for shields option.">
+        Ads and other creepy\nthings blocked
+      </message>
+      <message name="IDS_SHIELDS_ABOUT_TEXT" desc="About Text for shields option.">
+        Sites often include cookies and scripts which try to identify you and your device. They want to work out who you are and follow you across the web-tracking what you do on every site.\n\nBrave blocks these things so that you can browse without being followed around.
+      </message>
+      <message name="IDS_ABOUT_BRAVE_SHIELDS_TEXT" desc="About Title for shields option.">
+        About Brave Shields
+      </message>
+      <message name="IDS_UP" desc="Text for brave shields switch.">
+        UP
+      </message>
+      <message name="IDS_DOWN" desc="Text for brave shields switch.">
+        DOWN
+      </message>
+      <message name="IDS_BRAVE_SHIELDS_DOWN_TEXT" desc="Text for brave shields down.">
+        You're browsing this site without Brave's privacy protections. Does it not work right with Shields up?
+      </message>
+      <message name="IDS_SITE_BROKEN_TEXT" desc="Shields text for broken text warning message.">
+        If this site appears broken, try Shields down.
+      </message>
+      <message name="IDS_REPORT_BROKEN_SITE_TEXT" desc="Shields text for broken text warning message.">
+        Report a broken site
+      </message>
+      <message name="IDS_REPORT_BROKEN_SITE_TEXT_1" desc="Shields text for broken text warning message.">
+        Let Brave's developers know that this site doesn't work properly with Shields:
+      </message>
+      <message name="IDS_REPORT_BROKEN_SITE_TEXT_2" desc="Shields text for broken text warning message.">
+        Note: This site address will be submitted with your Brave version number and your IP address(which will not be stored).
+      </message>
+      <message name="IDS_THANK_YOU" desc="Title for thank you UI for shields.">
+        Thank you!
+      </message>
+      <message name="IDS_THANK_YOU_TEXT" desc="Text for thank you UI for shields.">
+        Thanks for letting Brave's developers know that there's something wrong with this site. We'll do our best to fix it!
+      </message>
+      <message name="IDS_ADVANCED_CONTROLS" desc="Title for toggle section.">
+        Advanced controls
       </message>
     </messages>
   </release>

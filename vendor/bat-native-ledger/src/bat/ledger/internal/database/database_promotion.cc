@@ -86,6 +86,9 @@ bool DatabasePromotion::Migrate(
     case 18: {
       return MigrateToV18(transaction);
     }
+    case 25: {
+      return MigrateToV25(transaction);
+    }
     default: {
       return true;
     }
@@ -199,11 +202,28 @@ bool DatabasePromotion::MigrateToV18(ledger::DBTransaction* transaction) {
   return creds_->Migrate(transaction, 18);
 }
 
+bool DatabasePromotion::MigrateToV25(ledger::DBTransaction* transaction) {
+  DCHECK(transaction);
+
+  const char column[] = "legacy";
+  const std::string query = base::StringPrintf(
+      "ALTER TABLE %s ADD %s BOOLEAN DEFAULT 0 NOT NULL",
+      kTableName,
+      column);
+
+  auto command = ledger::DBCommand::New();
+  command->type = ledger::DBCommand::Type::EXECUTE;
+  command->command = query;
+  transaction->commands.push_back(std::move(command));
+
+  return true;
+}
+
 void DatabasePromotion::InsertOrUpdate(
     ledger::PromotionPtr info,
     ledger::ResultCallback callback) {
   if (!info) {
-    BLOG(0, "Info is null");
+    BLOG(1, "Info is null");
     callback(ledger::Result::LEDGER_ERROR);
     return;
   }
@@ -213,8 +233,8 @@ void DatabasePromotion::InsertOrUpdate(
   const std::string query = base::StringPrintf(
       "INSERT OR REPLACE INTO %s "
       "(promotion_id, version, type, public_keys, suggestions, "
-      "approximate_value, status, expires_at, claimed_at) "
-      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "approximate_value, status, expires_at, claimed_at, legacy) "
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       kTableName);
 
   auto command = ledger::DBCommand::New();
@@ -230,6 +250,7 @@ void DatabasePromotion::InsertOrUpdate(
   BindInt(command.get(), 6, static_cast<int>(info->status));
   BindInt64(command.get(), 7, info->expires_at);
   BindInt64(command.get(), 8, info->claimed_at);
+  BindBool(command.get(), 9, info->legacy_claimed);
 
   transaction->commands.push_back(std::move(command));
 
@@ -244,7 +265,7 @@ void DatabasePromotion::GetRecord(
     const std::string& id,
     ledger::GetPromotionCallback callback) {
   if (id.empty()) {
-    BLOG(0, "Id is empty");
+    BLOG(1, "Id is empty");
     return callback({});
   }
 
@@ -252,7 +273,7 @@ void DatabasePromotion::GetRecord(
 
   const std::string query = base::StringPrintf(
       "SELECT promotion_id, version, type, public_keys, suggestions, "
-      "approximate_value, status, expires_at, claimed_at, claim_id "
+      "approximate_value, status, expires_at, claimed_at, claim_id, legacy "
       "FROM %s WHERE promotion_id=?",
       kTableName);
 
@@ -272,7 +293,8 @@ void DatabasePromotion::GetRecord(
       ledger::DBCommand::RecordBindingType::INT_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
-      ledger::DBCommand::RecordBindingType::STRING_TYPE
+      ledger::DBCommand::RecordBindingType::STRING_TYPE,
+      ledger::DBCommand::RecordBindingType::BOOL_TYPE
   };
 
   transaction->commands.push_back(std::move(command));
@@ -297,6 +319,8 @@ void DatabasePromotion::OnGetRecord(
   }
 
   if (response->result->get_records().size() != 1) {
+    BLOG(1, "Record size is not correct: " <<
+        response->result->get_records().size());
     callback({});
     return;
   }
@@ -313,6 +337,7 @@ void DatabasePromotion::OnGetRecord(
   info->expires_at = GetInt64Column(record, 7);
   info->claimed_at = GetInt64Column(record, 8);
   info->claim_id = GetStringColumn(record, 9);
+  info->legacy_claimed = GetBoolColumn(record, 10);
 
   callback(std::move(info));
 }
@@ -324,7 +349,7 @@ void DatabasePromotion::GetAllRecords(
   const std::string query = base::StringPrintf(
       "SELECT "
       "promotion_id, version, type, public_keys, suggestions, "
-      "approximate_value, status, expires_at, claimed_at, claim_id "
+      "approximate_value, status, expires_at, claimed_at, claim_id, legacy "
       "FROM %s",
       kTableName);
 
@@ -342,7 +367,8 @@ void DatabasePromotion::GetAllRecords(
       ledger::DBCommand::RecordBindingType::INT_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
-      ledger::DBCommand::RecordBindingType::STRING_TYPE
+      ledger::DBCommand::RecordBindingType::STRING_TYPE,
+      ledger::DBCommand::RecordBindingType::BOOL_TYPE
   };
 
   transaction->commands.push_back(std::move(command));
@@ -383,6 +409,7 @@ void DatabasePromotion::OnGetAllRecords(
     info->expires_at = GetInt64Column(record_pointer, 7);
     info->claimed_at = GetInt64Column(record_pointer, 8);
     info->claim_id = GetStringColumn(record_pointer, 9);
+    info->legacy_claimed = GetBoolColumn(record_pointer, 10);
 
     map.insert(std::make_pair(info->id, std::move(info)));
   }
@@ -394,7 +421,7 @@ void DatabasePromotion::DeleteRecordList(
     const std::vector<std::string>& ids,
     ledger::ResultCallback callback) {
   if (ids.empty()) {
-    BLOG(0, "List of ids is empty");
+    BLOG(1, "List of ids is empty");
     callback(ledger::Result::LEDGER_OK);
     return;
   }
@@ -422,7 +449,7 @@ void DatabasePromotion::SaveClaimId(
     const std::string& claim_id,
     ledger::ResultCallback callback) {
   if (promotion_id.empty() || claim_id.empty()) {
-    BLOG(0, "Data is empty " << promotion_id << "/" << claim_id);
+    BLOG(1, "Data is empty " << promotion_id << "/" << claim_id);
     callback(ledger::Result::LEDGER_ERROR);
     return;
   }
@@ -484,7 +511,7 @@ void DatabasePromotion::UpdateRecordsStatus(
     const ledger::PromotionStatus status,
     ledger::ResultCallback callback) {
   if (ids.empty()) {
-    BLOG(0, "List of ids is empty");
+    BLOG(1, "List of ids is empty");
     callback(ledger::Result::LEDGER_ERROR);
     return;
   }
@@ -514,7 +541,7 @@ void DatabasePromotion::CredentialCompleted(
     const std::string& promotion_id,
     ledger::ResultCallback callback) {
   if (promotion_id.empty()) {
-    BLOG(0, "Promotion id is empty");
+    BLOG(1, "Promotion id is empty");
     callback(ledger::Result::LEDGER_ERROR);
     return;
   }
@@ -548,7 +575,7 @@ void DatabasePromotion::GetRecords(
     const std::vector<std::string>& ids,
     ledger::GetPromotionListCallback callback) {
   if (ids.empty()) {
-    BLOG(0, "List of ids is empty");
+    BLOG(1, "List of ids is empty");
     callback({});
     return;
   }
@@ -558,7 +585,7 @@ void DatabasePromotion::GetRecords(
   const std::string query = base::StringPrintf(
       "SELECT "
       "promotion_id, version, type, public_keys, suggestions, "
-      "approximate_value, status, expires_at, claimed_at, claim_id "
+      "approximate_value, status, expires_at, claimed_at, claim_id, legacy "
       "FROM %s WHERE promotion_id IN (%s)",
       kTableName,
       GenerateStringInCase(ids).c_str());
@@ -577,7 +604,8 @@ void DatabasePromotion::GetRecords(
       ledger::DBCommand::RecordBindingType::INT_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
-      ledger::DBCommand::RecordBindingType::STRING_TYPE
+      ledger::DBCommand::RecordBindingType::STRING_TYPE,
+      ledger::DBCommand::RecordBindingType::BOOL_TYPE
   };
 
   transaction->commands.push_back(std::move(command));
@@ -619,6 +647,7 @@ void DatabasePromotion::OnGetRecords(
     info->expires_at = GetInt64Column(record_pointer, 7);
     info->claimed_at = GetInt64Column(record_pointer, 8);
     info->claim_id = GetStringColumn(record_pointer, 9);
+    info->legacy_claimed = GetBoolColumn(record_pointer, 10);
 
     list.push_back(std::move(info));
   }
@@ -630,7 +659,7 @@ void DatabasePromotion::GetRecordsByType(
     const std::vector<ledger::PromotionType>& types,
     ledger::GetPromotionListCallback callback) {
   if (types.empty()) {
-    BLOG(0, "List of types is empty");
+    BLOG(1, "List of types is empty");
     callback({});
     return;
   }
@@ -644,7 +673,7 @@ void DatabasePromotion::GetRecordsByType(
 
   const std::string query = base::StringPrintf(
       "SELECT promotion_id, version, type, public_keys, suggestions, "
-      "approximate_value, status, expires_at, claimed_at, claim_id "
+      "approximate_value, status, expires_at, claimed_at, claim_id, legacy "
       "FROM %s WHERE type IN (%s)",
       kTableName,
       base::JoinString(in_case, ",").c_str());
@@ -663,7 +692,8 @@ void DatabasePromotion::GetRecordsByType(
       ledger::DBCommand::RecordBindingType::INT_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
-      ledger::DBCommand::RecordBindingType::STRING_TYPE
+      ledger::DBCommand::RecordBindingType::STRING_TYPE,
+      ledger::DBCommand::RecordBindingType::BOOL_TYPE
   };
 
   transaction->commands.push_back(std::move(command));
@@ -681,7 +711,7 @@ void DatabasePromotion::UpdateRecordsBlankPublicKey(
     const std::vector<std::string>& ids,
     ledger::ResultCallback callback) {
   if (ids.empty()) {
-    BLOG(0, "List of ids is empty");
+    BLOG(1, "List of ids is empty");
     callback(ledger::Result::LEDGER_ERROR);
     return;
   }

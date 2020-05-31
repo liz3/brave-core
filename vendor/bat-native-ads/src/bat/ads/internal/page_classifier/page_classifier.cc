@@ -11,6 +11,7 @@
 #include "bat/ads/internal/page_classifier/page_classifier_util.h"
 
 #include "base/logging.h"
+#include "brave/components/l10n/browser/locale_helper.h"
 #include "brave/components/l10n/common/locale_util.h"
 
 namespace ads {
@@ -34,7 +35,9 @@ bool PageClassifier::Initialize(
 }
 
 bool PageClassifier::ShouldClassifyPages() const {
-  const std::string locale = ads_->get_ads_client()->GetLocale();
+  const std::string locale =
+      brave_l10n::LocaleHelper::GetInstance()->GetLocale();
+
   return ShouldClassifyPagesForLocale(locale);
 }
 
@@ -110,8 +113,12 @@ bool PageClassifier::ShouldClassifyPagesForLocale(
   return true;
 }
 
-const std::string& PageClassifier::GetPageClassification(
+std::string PageClassifier::GetPageClassification(
     const PageProbabilitiesMap& page_probabilities) const {
+  if (page_probabilities.empty()) {
+    return "";
+  }
+
   const auto iter = std::max_element(page_probabilities.begin(),
       page_probabilities.end(), [](const CategoryProbabilityPair& a,
           const CategoryProbabilityPair& b) -> bool {
@@ -166,6 +173,10 @@ CategoryProbabilitiesList PageClassifier::GetWinningCategoryProbabilities(
 void PageClassifier::CachePageProbabilities(
     const std::string& url,
     const PageProbabilitiesMap& page_probabilities) {
+  if (page_probabilities.empty()) {
+    return;
+  }
+
   const auto iter = page_probabilities_cache_.find(url);
   if (iter == page_probabilities_cache_.end()) {
     page_probabilities_cache_.insert({url, page_probabilities});

@@ -150,25 +150,31 @@ void Contribution::ResetReconcileStamp() {
 }
 
 void Contribution::StartMonthlyContribution() {
+  const auto reconcile_stamp = ledger_->GetReconcileStamp();
+  ResetReconcileStamp();
+
   if (!ledger_->GetRewardsMainEnabled()) {
-    ResetReconcileStamp();
     return;
   }
+
   BLOG(1, "Staring monthly contribution");
 
   auto callback = std::bind(&Contribution::StartAutoContribute,
       this,
-      _1);
+      _1,
+      reconcile_stamp);
 
   monthly_->Process(callback);
 }
 
-void Contribution::StartAutoContribute(const ledger::Result result) {
+void Contribution::StartAutoContribute(
+    const ledger::Result result,
+    const uint64_t reconcile_stamp) {
   if (result != ledger::Result::LEDGER_OK) {
     BLOG(0, "Monthly contribution failed");
   }
 
-  ac_->Process();
+  ac_->Process(reconcile_stamp);
 }
 
 void Contribution::OnBalance(
@@ -202,7 +208,7 @@ void Contribution::OnTimer(uint32_t timer_id) {
   unverified_->OnTimer(timer_id);
   uphold_->OnTimer(timer_id);
 
-  for (std::pair<std::string, uint32_t> const& value : retry_timers_) {
+  for (const auto& value : retry_timers_) {
     if (value.second != timer_id) {
       continue;
     }
@@ -300,22 +306,23 @@ void Contribution::OneTimeTip(
   tip_->Process(publisher_key, amount, callback);
 }
 
-void Contribution::OnDeleteContributionQueue(const ledger::Result result) {
+void Contribution::OnMarkContributionQueueAsComplete(
+    const ledger::Result result) {
   queue_in_progress_ = false;
   CheckContributionQueue();
 }
 
-void Contribution::DeleteContributionQueue(const uint64_t id) {
-  if (id == 0) {
+void Contribution::MarkContributionQueueAsComplete(const std::string& id) {
+  if (id.empty()) {
     BLOG(0, "Queue id is empty");
     return;
   }
 
-  auto callback = std::bind(&Contribution::OnDeleteContributionQueue,
+  auto callback = std::bind(&Contribution::OnMarkContributionQueueAsComplete,
       this,
       _1);
 
-  ledger_->DeleteContributionQueue(id, callback);
+  ledger_->MarkContributionQueueAsComplete(id, callback);
 }
 
 void Contribution::CreateNewEntry(
@@ -329,7 +336,7 @@ void Contribution::CreateNewEntry(
 
   if (queue->publishers.empty() || !balance || wallet_type.empty()) {
     BLOG(0, "Queue data is wrong");
-    DeleteContributionQueue(queue->id);
+    MarkContributionQueueAsComplete(queue->id);
     return;
   }
 
@@ -472,8 +479,8 @@ void Contribution::OnEntrySaved(
       braveledger_bind_util::FromContributionQueueToString(queue->Clone()));
 
     ledger_->SaveContributionQueue(queue->Clone(), save_callback);
-  } else {
-    DeleteContributionQueue(queue->id);
+  } else if (queue->type != ledger::RewardsType::ONE_TIME_TIP) {
+    MarkContributionQueueAsComplete(queue->id);
   }
 }
 
@@ -516,7 +523,7 @@ void Contribution::Process(
 
   if (queue->amount == 0 || queue->publishers.empty()) {
     BLOG(0, "Amount/publisher is empty");
-    DeleteContributionQueue(queue->id);
+    MarkContributionQueueAsComplete(queue->id);
     return;
   }
 
@@ -527,13 +534,13 @@ void Contribution::Process(
 
   if (!have_enough_balance) {
     BLOG(1, "Not enough balance");
-    DeleteContributionQueue(queue->id);
+    MarkContributionQueueAsComplete(queue->id);
     return;
   }
 
   if (queue->amount == 0) {
     BLOG(0, "Amount is 0");
-    DeleteContributionQueue(queue->id);
+    MarkContributionQueueAsComplete(queue->id);
     return;
   }
 

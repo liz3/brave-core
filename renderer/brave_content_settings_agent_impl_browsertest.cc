@@ -10,6 +10,7 @@
 #include "brave/components/brave_shields/common/brave_shield_constants.h"
 #include "brave/components/brave_shields/common/features.h"
 #include "chrome/browser/content_settings/host_content_settings_map_factory.h"
+#include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/ui/browser.h"
 #include "chrome/common/chrome_content_client.h"
 #include "chrome/test/base/in_process_browser_test.h"
@@ -29,6 +30,13 @@ using brave_shields::ControlType;
 namespace {
 
 const char kIframeID[] = "test";
+
+const char kPointInPathScript[] =
+    "var canvas = document.createElement('canvas');"
+    "var ctx = canvas.getContext('2d');"
+    "ctx.rect(10, 10, 100, 100);"
+    "ctx.stroke();"
+    "domAutomationController.send(ctx.isPointInPath(10, 10));";
 
 const char kGetImageDataScript[] =
     "var adder = (a, x) => a + x;"
@@ -57,6 +65,8 @@ const char kCookieScript[] =
 
 const char kReferrerScript[] =
     "domAutomationController.send(document.referrer);";
+
+const char kTitleScript[] = "domAutomationController.send(document.title);";
 
 }  // namespace
 
@@ -422,6 +432,30 @@ class BraveContentSettingsAgentImplV2BrowserTest
 };
 
 IN_PROC_BROWSER_TEST_F(BraveContentSettingsAgentImplV2BrowserTest,
+                       WebGLReadPixels) {
+  std::string origin = "a.com";
+  std::string path = "/webgl/readpixels.html";
+
+  // Farbling level: maximum
+  // WebGL readPixels(): blocked
+  BlockFingerprinting();
+  NavigateToURLUntilLoadStop(origin, path);
+  EXPECT_EQ(ExecScriptGetStr(kTitleScript, contents()), "1");
+
+  // Farbling level: balanced (default)
+  // WebGL readPixels(): allowed
+  SetFingerprintingDefault();
+  NavigateToURLUntilLoadStop(origin, path);
+  EXPECT_EQ(ExecScriptGetStr(kTitleScript, contents()), "0");
+
+  // Farbling level: off
+  // WebGL readPixels(): allowed
+  AllowFingerprinting();
+  NavigateToURLUntilLoadStop(origin, path);
+  EXPECT_EQ(ExecScriptGetStr(kTitleScript, contents()), "0");
+}
+
+IN_PROC_BROWSER_TEST_F(BraveContentSettingsAgentImplV2BrowserTest,
                        FarbleGetImageData) {
   // Farbling should be default when kBraveFingerprintingV2 is enabled
   // because it uses a different content setting
@@ -457,6 +491,61 @@ IN_PROC_BROWSER_TEST_F(BraveContentSettingsAgentImplV2BrowserTest,
   EXPECT_TRUE(
       ExecuteScriptAndExtractInt(contents(), kGetImageDataScript, &hash));
   EXPECT_EQ(kExpectedImageDataHashFarblingOff, hash);
+}
+
+IN_PROC_BROWSER_TEST_F(BraveContentSettingsAgentImplV2BrowserTest,
+                       CanvasIsPointInPath) {
+  bool isPointInPath;
+
+  // Farbling level: maximum
+  // Canvas isPointInPath(): blocked
+  BlockFingerprinting();
+  NavigateToPageWithIframe();
+  EXPECT_TRUE(ExecuteScriptAndExtractBool(contents(), kPointInPathScript,
+                                          &isPointInPath));
+  EXPECT_FALSE(isPointInPath);
+  NavigateIframe(cross_site_url());
+  EXPECT_TRUE(ExecuteScriptAndExtractBool(child_frame(), kPointInPathScript,
+                                          &isPointInPath));
+  EXPECT_FALSE(isPointInPath);
+
+  // Farbling level: balanced (default)
+  // Canvas isPointInPath(): allowed
+  SetFingerprintingDefault();
+  NavigateToPageWithIframe();
+  EXPECT_TRUE(ExecuteScriptAndExtractBool(contents(), kPointInPathScript,
+                                          &isPointInPath));
+  EXPECT_TRUE(isPointInPath);
+  NavigateIframe(cross_site_url());
+  EXPECT_TRUE(ExecuteScriptAndExtractBool(child_frame(), kPointInPathScript,
+                                          &isPointInPath));
+  EXPECT_TRUE(isPointInPath);
+
+  // Farbling level: off
+  // Canvas isPointInPath(): allowed
+  AllowFingerprinting();
+  NavigateToPageWithIframe();
+  EXPECT_TRUE(ExecuteScriptAndExtractBool(contents(), kPointInPathScript,
+                                          &isPointInPath));
+  EXPECT_TRUE(isPointInPath);
+  NavigateIframe(cross_site_url());
+  EXPECT_TRUE(ExecuteScriptAndExtractBool(child_frame(), kPointInPathScript,
+                                          &isPointInPath));
+  EXPECT_TRUE(isPointInPath);
+
+  // Shields: down
+  // Canvas isPointInPath(): allowed
+  BlockFingerprinting();
+  ShieldsDown();
+  AllowFingerprinting();
+  NavigateToPageWithIframe();
+  EXPECT_TRUE(ExecuteScriptAndExtractBool(contents(), kPointInPathScript,
+                                          &isPointInPath));
+  EXPECT_TRUE(isPointInPath);
+  NavigateIframe(cross_site_url());
+  EXPECT_TRUE(ExecuteScriptAndExtractBool(child_frame(), kPointInPathScript,
+                                          &isPointInPath));
+  EXPECT_TRUE(isPointInPath);
 }
 
 IN_PROC_BROWSER_TEST_F(BraveContentSettingsAgentImplBrowserTest,

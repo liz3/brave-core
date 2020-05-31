@@ -818,8 +818,6 @@ void RewardsServiceImpl::OnGetRewardsInternalsInfo(
       std::make_unique<brave_rewards::RewardsInternalsInfo>();
   rewards_internals_info->payment_id = info->payment_id;
   rewards_internals_info->is_key_info_seed_valid = info->is_key_info_seed_valid;
-  rewards_internals_info->persona_id = info->persona_id;
-  rewards_internals_info->user_id = info->user_id;
   rewards_internals_info->boot_stamp = info->boot_stamp;
 
   // TODO(https://github.com/brave/brave-browser/issues/8633)
@@ -868,6 +866,11 @@ void RewardsServiceImpl::OnReconcileComplete(
 
 void RewardsServiceImpl::LoadLedgerState(
     ledger::OnLoadCallback callback) {
+  if (!profile_->GetPrefs()->GetBoolean(prefs::kBraveRewardsEnabledMigrated)) {
+    bat_ledger_->GetRewardsMainEnabled(
+        base::BindOnce(&RewardsServiceImpl::SetRewardsMainEnabledPref,
+          AsWeakPtr()));
+  }
   base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
       base::BindOnce(&LoadStateOnFileTaskRunner, ledger_state_path_),
       base::BindOnce(&RewardsServiceImpl::OnLedgerStateLoaded,
@@ -908,11 +911,6 @@ void RewardsServiceImpl::OnLedgerStateLoaded(
 
 void RewardsServiceImpl::LoadPublisherState(
     ledger::OnLoadCallback callback) {
-  if (!profile_->GetPrefs()->GetBoolean(prefs::kBraveRewardsEnabledMigrated)) {
-    bat_ledger_->GetRewardsMainEnabled(
-        base::BindOnce(&RewardsServiceImpl::SetRewardsMainEnabledPref,
-          AsWeakPtr()));
-  }
   base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
       base::BindOnce(&LoadOnFileTaskRunner, publisher_state_path_),
       base::BindOnce(&RewardsServiceImpl::OnPublisherStateLoaded,

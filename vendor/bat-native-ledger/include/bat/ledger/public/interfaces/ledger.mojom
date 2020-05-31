@@ -207,8 +207,6 @@ struct ReconcileInfo {
 struct RewardsInternalsInfo {
   string payment_id;
   bool is_key_info_seed_valid;
-  string persona_id;
-  string user_id;
   uint64 boot_stamp;
 
   map<string, ReconcileInfo> current_reconciles;
@@ -340,10 +338,12 @@ enum WalletStatus {
 };
 
 struct ContributionQueue {
-  uint64 id;
+  string id;
   RewardsType type;
   double amount;
   bool partial;
+  uint64 created_at;
+  uint64 completed_at;
 
   array<ContributionQueuePublisher> publishers;
 };
@@ -393,6 +393,9 @@ struct UnblindedToken {
   double value;
   string creds_id;
   uint64 expires_at;
+  uint64 redeemed_at;
+  string redeem_id;
+  RewardsType redeem_type;
 };
 
 enum Platform {

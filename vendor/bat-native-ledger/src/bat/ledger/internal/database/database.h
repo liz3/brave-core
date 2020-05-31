@@ -147,8 +147,8 @@ class Database {
   void GetFirstContributionQueue(
       ledger::GetFirstContributionQueueCallback callback);
 
-  void DeleteContributionQueue(
-      const uint64_t id,
+  void MarkContributionQueueAsComplete(
+      const std::string& id,
       ledger::ResultCallback callback);
 
   /**

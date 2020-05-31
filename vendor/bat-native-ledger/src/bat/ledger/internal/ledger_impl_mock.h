@@ -244,22 +244,6 @@ class MockLedgerImpl : public LedgerImpl {
 
   MOCK_CONST_METHOD0(GetPaymentId, const std::string&());
 
-  MOCK_CONST_METHOD0(GetPersonaId, const std::string&());
-
-  MOCK_METHOD1(SetPersonaId, void(const std::string&));
-
-  MOCK_CONST_METHOD0(GetUserId, const std::string&());
-
-  MOCK_METHOD1(SetUserId, void(const std::string&));
-
-  MOCK_CONST_METHOD0(GetRegistrarVK, const std::string&());
-
-  MOCK_METHOD1(SetRegistrarVK, void(const std::string&));
-
-  MOCK_CONST_METHOD0(GetPreFlight, const std::string&());
-
-  MOCK_METHOD1(SetPreFlight, void(const std::string&));
-
   MOCK_CONST_METHOD0(GetWalletInfo,
       const ledger::WalletInfoProperties&());
 
@@ -461,7 +445,7 @@ class MockLedgerImpl : public LedgerImpl {
   MOCK_METHOD2(SaveContributionQueue,
       void(ledger::ContributionQueuePtr, ledger::ResultCallback));
 
-  MOCK_METHOD2(DeleteContributionQueue,
+  MOCK_METHOD2(MarkContributionQueueAsComplete,
       void(const uint64_t, ledger::ResultCallback));
 
   MOCK_METHOD1(GetFirstContributionQueue,

@@ -1,5 +1,6 @@
 import("//brave/build/config.gni")
 import("//brave/components/binance/browser/buildflags/buildflags.gni")
+import("//brave/components/brave_together/buildflags/buildflags.gni")
 import("//brave/browser/tor/buildflags/buildflags.gni")
 import("//brave/components/brave_ads/browser/buildflags/buildflags.gni")
 import("//brave/components/brave_perf_predictor/browser/buildflags/buildflags.gni")
@@ -22,14 +23,14 @@ source_set("browser_process") {
     "//chrome/browser/*",
     "//brave/browser/*",
     "//brave:browser_dependencies",
-    "//brave/test:*"
+    "//brave/components/brave_ads/test:*",
+    "//brave/components/brave_rewards/test:*",
+    "//brave/test:*",
   ]
 
   sources = [
     "autocomplete/brave_autocomplete_provider_client.cc",
     "autocomplete/brave_autocomplete_provider_client.h",
-    "autocomplete/brave_autocomplete_provider_client_for_classifier.cc",
-    "autocomplete/brave_autocomplete_provider_client_for_classifier.h",
     "autocomplete/brave_autocomplete_scheme_classifier.cc",
     "autocomplete/brave_autocomplete_scheme_classifier.h",
     "brave_shields/ad_block_pref_service_factory.cc",
@@ -64,8 +65,8 @@ source_set("browser_process") {
     "component_updater/brave_component_updater_configurator.h",
     "component_updater/brave_component_updater_delegate.cc",
     "component_updater/brave_component_updater_delegate.h",
-    "geolocation/brave_geolocation_permission_context.cc",
-    "geolocation/brave_geolocation_permission_context.h",
+    "geolocation/brave_geolocation_permission_context_delegate.cc",
+    "geolocation/brave_geolocation_permission_context_delegate.h",
     "metrics/metrics_reporting_util.cc",
     "metrics/metrics_reporting_util.h",
     "search_engines/guest_window_search_engine_provider_service.cc",
@@ -115,7 +116,6 @@ source_set("browser_process") {
     "content_settings",
     "download",
     "net",
-    "permissions",
     "profiles",
     "renderer_context_menu",
     "ui",
@@ -130,6 +130,7 @@ source_set("browser_process") {
     "//brave/components/binance/browser/buildflags",
     "//brave/components/brave_component_updater/browser",
     "//brave/components/brave_drm",
+    "//brave/components/brave_together/browser",
     "//brave/components/brave_referrals/browser",
     "//brave/components/brave_shields/browser",
     "//brave/components/brave_shields/common",
@@ -179,6 +180,7 @@ source_set("browser_process") {
     "ntp_background_images",
     "//services/network/public/cpp",
     "//services/service_manager/embedder",
+    "//third_party/blink/public/mojom:mojom_platform_headers",
     "//third_party/widevine/cdm:buildflags",
     "//ui/base",
   ]
@@ -238,6 +240,7 @@ source_set("browser_process") {
       "//brave/browser/android/preferences",
       "//brave/build/android:jni_headers",
       "//chrome/android:jni_headers",
+      "//components/ntp_tiles",
     ]
   }
 
@@ -254,6 +257,18 @@ source_set("browser_process") {
 
     deps += [
       "//brave/components/binance/browser",
+      "//components/country_codes",
+    ]
+  }
+
+  if (brave_together_enabled) {
+    sources += [
+      "brave_together/brave_together_util.cc",
+      "brave_together/brave_together_util.h",
+    ]
+
+    deps += [
+      "//brave/components/brave_together/browser",
       "//components/country_codes",
     ]
   }
