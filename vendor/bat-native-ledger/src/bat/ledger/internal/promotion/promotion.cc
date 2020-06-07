@@ -116,8 +116,6 @@ void Promotion::Fetch(ledger::FetchPromotionCallback callback) {
     BLOG(0, "Corrupted wallet");
     ledger::PromotionList empty_list;
     callback(ledger::Result::CORRUPTED_DATA, std::move(empty_list));
-    ledger::WalletProperties properties;
-    ledger_->OnWalletProperties(ledger::Result::CORRUPTED_DATA, properties);
     return;
   }
 
@@ -418,6 +416,10 @@ void Promotion::OnComplete(
         braveledger_time_util::GetCurrentYear(),
         ConvertPromotionTypeToReportType(promotion->type),
         promotion->approximate_value);
+
+    if (promotion->type == ledger::PromotionType::ADS) {
+      ledger_->UpdateAdsRewards(true);
+    }
   }
 
   callback(result, std::move(promotion));

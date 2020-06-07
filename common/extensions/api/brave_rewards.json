@@ -148,35 +148,6 @@
         ]
       },
       {
-        "name": "onWalletProperties",
-        "type": "function",
-        "description": "Fired when wallet properties (balance) is fetched",
-        "parameters": [
-          {
-            "name": "properties",
-            "type": "object",
-            "properties": {
-              "defaultTipChoices": {
-                "type": "array",
-                "description": "default tip choices for one-time tips",
-                "items": {
-                  "type": "number",
-                  "minimum": 0
-                }
-              },
-              "defaultMonthlyTipChoices": {
-                "type": "array",
-                "description": "default tip choices for recurring tips",
-                "items": {
-                  "type": "number",
-                  "minimum": 0
-                }
-              }
-            }
-          }
-        ]
-      },
-      {
         "name": "onAdsEnabled",
         "type": "function",
         "description": "",
@@ -512,10 +483,35 @@
         ]
       },
       {
-        "name": "getWalletProperties",
+        "name": "getRewardsParameters",
         "type": "function",
         "description": "Get default values that we get from the server",
-        "parameters": []
+        "parameters": [
+          {
+            "type": "function",
+            "name": "callback",
+            "parameters": [
+              {
+                "name": "properties",
+                "type": "object",
+                "properties": {
+                  "rate": {
+                    "type": "number",
+                    "description": "conversion rate for BAT"
+                  },
+                  "monthlyTipChoices": {
+                    "type": "array",
+                    "description": "default tip choices for monthly tips",
+                    "items": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
       },
       {
         "name": "getBalanceReport",
@@ -944,7 +940,7 @@
         ]
       },
       {
-        "name": "getInlineTipSetting",
+        "name": "getInlineTippingPlatformEnabled",
         "type": "function",
         "description": "Gets setting for inline tip for provided key",
         "parameters": [
@@ -978,9 +974,6 @@
                 "type": "object",
                 "properties": {
                   "total": {
-                    "type": "any"
-                  },
-                  "rates": {
                     "type": "any"
                   },
                   "wallets": {

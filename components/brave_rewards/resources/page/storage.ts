@@ -18,14 +18,11 @@ export const defaultState: Rewards.State = {
   walletCreateFailed: false,
   contributionMinTime: 8,
   contributionMinVisits: 1,
-  contributionMonthly: 10,
+  contributionMonthly: 0,
   contributionNonVerified: true,
   contributionVideos: true,
   donationAbilityYT: true,
   donationAbilityTwitter: true,
-  walletInfo: {
-    choices: [5.0, 7.5, 10.0, 17.5, 25.0, 50.0, 75.0, 100.0]
-  },
   recoveryKey: '',
   reconcileStamp: 0,
   ui: {
@@ -66,7 +63,6 @@ export const defaultState: Rewards.State = {
   excludedList: [],
   balance: {
     total: 0,
-    rates: {},
     wallets: {}
   },
   monthlyReport: {
@@ -74,12 +70,21 @@ export const defaultState: Rewards.State = {
     year: -1
   },
   monthlyReportIds: [],
-  currentCountryCode: ''
+  currentCountryCode: '',
+  parameters: {
+    autoContributeChoice: 0,
+    autoContributeChoices: [],
+    rate: 0
+  }
 }
 
 const cleanData = (state: Rewards.State) => {
   if (!state.balance) {
     state.balance = defaultState.balance
+  }
+
+  if (!state.parameters) {
+    state.parameters = defaultState.parameters
   }
 
   state.ui.modalRedirect = 'hide'

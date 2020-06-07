@@ -26,11 +26,7 @@ class ConfirmationsClientMock : public ConfirmationsClient {
   MOCK_METHOD1(OnWalletInitialized, void(
       ledger::Result result));
 
-  MOCK_METHOD0(FetchWalletProperties, void());
-
-  MOCK_METHOD2(OnWalletProperties, void(
-      ledger::Result result,
-      ledger::WalletPropertiesPtr));
+  MOCK_METHOD0(GetRewardsParameters, void());
 
   MOCK_METHOD4(OnReconcileComplete, void(
       Result result,
@@ -40,10 +36,6 @@ class ConfirmationsClientMock : public ConfirmationsClient {
 
   MOCK_METHOD1(LoadLedgerState, void(
       ledger::OnLoadCallback callback));
-
-  MOCK_METHOD2(SaveLedgerState, void(
-      const std::string& ledger_state,
-      ledger::ResultCallback callback));
 
   MOCK_METHOD1(LoadPublisherState, void(
       ledger::OnLoadCallback callback));
@@ -99,7 +91,7 @@ class ConfirmationsClientMock : public ConfirmationsClient {
       const std::string& publisher_key,
       bool exclude));
 
-  MOCK_CONST_METHOD4(Log, void(
+  MOCK_METHOD4(Log, void(
       const char* file,
       const int line,
       const int verbose_level,

@@ -29,22 +29,12 @@ bool getJSONList(const std::string& fieldName,
                  const std::string& json,
                  std::vector<std::string>* value);
 
-bool getJSONWalletInfo(const std::string& json,
-                       ledger::WalletInfoProperties* walletInfo,
-                       double* fee_amount);
-
-bool getJSONRates(const std::string& json,
-                  std::map<std::string, double>* rates);
-
 bool getJSONTwitchProperties(
     const std::string& json,
     std::vector<std::map<std::string, std::string>>* parts);
 
 bool getJSONBatchSurveyors(const std::string& json,
                            std::vector<std::string>* surveyors);
-
-bool getJSONRecoverWallet(const std::string& json,
-                          double* balance);
 
 bool getJSONResponse(const std::string& json,
                      unsigned int* statusCode,

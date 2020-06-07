@@ -169,7 +169,7 @@ class ContributeBox extends React.Component<Props, State> {
             <SelectMobile
               onlyAnonWallet={onlyAnonWallet}
               onChange={this.onSelectSettingChange.bind(this, 'contributionMonthly')}
-              value={parseFloat((contributionMonthly.toString() || '0')).toFixed(1)}
+              value={parseFloat((contributionMonthly.toString() || '0')).toFixed(3)}
               amountOptions={this.getAmountOptions(monthlyList)}
             />
           </ControlWrapper>
@@ -238,16 +238,15 @@ class ContributeBox extends React.Component<Props, State> {
   render () {
     const {
       enabledMain,
-      walletInfo,
+      parameters,
       contributionMonthly,
       enabledContribute,
       reconcileStamp,
       autoContributeList,
       excludedList,
-      balance,
       ui
     } = this.props.rewardsData
-    const monthlyList: MonthlyChoice[] = utils.generateContributionMonthly(walletInfo.choices, balance.rates)
+    const monthlyList: MonthlyChoice[] = utils.generateContributionMonthly(parameters)
     const contributeRows = this.getContributeRows(autoContributeList)
     const excludedRows = this.getExcludedRows(excludedList)
     const topRows = contributeRows.slice(0, 5)
@@ -283,7 +282,7 @@ class ContributeBox extends React.Component<Props, State> {
             <SelectMobile
               floating={true}
               onChange={this.onSelectSettingChange.bind(this, 'contributionMonthly')}
-              value={parseFloat((contributionMonthly.toString() || '0')).toFixed(1)}
+              value={parseFloat((contributionMonthly.toString() || '0')).toFixed(3)}
               onlyAnonWallet={onlyAnonWallet}
               amountOptions={this.getAmountOptions(monthlyList)}
             />

@@ -405,17 +405,40 @@ ExtensionFunction::ResponseAction BraveRewardsGetPublisherDataFunction::Run() {
   return RespondNow(NoArguments());
 }
 
-BraveRewardsGetWalletPropertiesFunction::
-~BraveRewardsGetWalletPropertiesFunction() = default;
+BraveRewardsGetRewardsParametersFunction::
+~BraveRewardsGetRewardsParametersFunction() = default;
 
 ExtensionFunction::ResponseAction
-BraveRewardsGetWalletPropertiesFunction::Run() {
+BraveRewardsGetRewardsParametersFunction::Run() {
   Profile* profile = Profile::FromBrowserContext(browser_context());
   auto* rewards_service = RewardsServiceFactory::GetForProfile(profile);
-  if (rewards_service) {
-    rewards_service->FetchWalletProperties();
+  if (!rewards_service) {
+    auto data = std::make_unique<base::Value>(base::Value::Type::DICTIONARY);
+    return RespondNow(OneArgument(std::move(data)));
   }
-  return RespondNow(NoArguments());
+
+  rewards_service->GetRewardsParameters(base::BindOnce(
+      &BraveRewardsGetRewardsParametersFunction::OnGet,
+      this));
+  return RespondLater();
+}
+
+void BraveRewardsGetRewardsParametersFunction::OnGet(
+    std::unique_ptr<::brave_rewards::RewardsParameters> parameters) {
+  auto data = std::make_unique<base::DictionaryValue>();
+
+  if (!parameters) {
+    return Respond(OneArgument(std::move(data)));
+  }
+
+  data->SetDouble("rate", parameters->rate);
+  auto monthly_choices = std::make_unique<base::ListValue>();
+  for (auto const& item : parameters->monthly_tip_choices) {
+    monthly_choices->Append(base::Value(item));
+  }
+  data->SetList("monthlyTipChoices", std::move(monthly_choices));
+
+  Respond(OneArgument(std::move(data)));
 }
 
 BraveRewardsGetBalanceReportFunction::
@@ -629,7 +652,7 @@ BraveRewardsGetACEnabledFunction::Run() {
     return RespondNow(Error("Rewards service is not initialized"));
   }
 
-  rewards_service->GetAutoContribute(base::BindOnce(
+  rewards_service->GetAutoContributeEnabled(base::BindOnce(
         &BraveRewardsGetACEnabledFunction::OnGetACEnabled,
         this));
   return RespondLater();
@@ -875,14 +898,15 @@ BraveRewardsGetAllNotificationsFunction::Run() {
   return RespondNow(OneArgument(std::move(list)));
 }
 
-BraveRewardsGetInlineTipSettingFunction::
-~BraveRewardsGetInlineTipSettingFunction() {
+BraveRewardsGetInlineTippingPlatformEnabledFunction::
+~BraveRewardsGetInlineTippingPlatformEnabledFunction() {
 }
 
 ExtensionFunction::ResponseAction
-BraveRewardsGetInlineTipSettingFunction::Run() {
-  std::unique_ptr<brave_rewards::GetInlineTipSetting::Params> params(
-      brave_rewards::GetInlineTipSetting::Params::Create(*args_));
+BraveRewardsGetInlineTippingPlatformEnabledFunction::Run() {
+  std::unique_ptr<brave_rewards::GetInlineTippingPlatformEnabled::Params>
+      params(brave_rewards::GetInlineTippingPlatformEnabled::Params::Create(
+          *args_));
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
   RewardsService* rewards_service =
@@ -891,15 +915,17 @@ BraveRewardsGetInlineTipSettingFunction::Run() {
     return RespondNow(OneArgument(std::make_unique<base::Value>(false)));
   }
 
-  rewards_service->GetInlineTipSetting(
+  rewards_service->GetInlineTippingPlatformEnabled(
       params->key,
       base::BindOnce(
-          &BraveRewardsGetInlineTipSettingFunction::OnInlineTipSetting,
+          &BraveRewardsGetInlineTippingPlatformEnabledFunction::
+          OnInlineTipSetting,
           this));
   return RespondLater();
 }
 
-void BraveRewardsGetInlineTipSettingFunction::OnInlineTipSetting(bool value) {
+void BraveRewardsGetInlineTippingPlatformEnabledFunction::OnInlineTipSetting(
+    bool value) {
   Respond(OneArgument(std::make_unique<base::Value>(value)));
 }
 
@@ -932,12 +958,6 @@ void BraveRewardsFetchBalanceFunction::OnBalance(
   if (result == 0 && balance) {
     balance_value->SetDoubleKey("total", balance->total);
 
-    base::Value rates(base::Value::Type::DICTIONARY);
-    for (auto const& rate : balance->rates) {
-      rates.SetDoubleKey(rate.first, rate.second);
-    }
-    balance_value->SetKey("rates", std::move(rates));
-
     base::Value wallets(base::Value::Type::DICTIONARY);
     for (auto const& rate : balance->wallets) {
       wallets.SetDoubleKey(rate.first, rate.second);
@@ -945,8 +965,6 @@ void BraveRewardsFetchBalanceFunction::OnBalance(
     balance_value->SetKey("wallets", std::move(wallets));
   } else {
     balance_value->SetDoubleKey("total", 0.0);
-    base::Value rates(base::Value::Type::DICTIONARY);
-    balance_value->SetKey("rates", std::move(rates));
     base::Value wallets(base::Value::Type::DICTIONARY);
     balance_value->SetKey("wallets", std::move(wallets));
   }

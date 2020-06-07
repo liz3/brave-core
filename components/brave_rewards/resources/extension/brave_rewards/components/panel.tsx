@@ -80,6 +80,10 @@ export class Panel extends React.Component<Props, State> {
     chrome.braveRewards.getRecurringTips((tips: RewardsExtension.RecurringTips) => {
       this.props.actions.onRecurringTips(tips)
     })
+
+    chrome.braveRewards.getRewardsParameters((parameters: RewardsExtension.RewardsParameters) => {
+      this.props.actions.onRewardsParameters(parameters)
+    })
   }
 
   componentDidUpdate (prevProps: Props, prevState: State) {
@@ -214,8 +218,7 @@ export class Panel extends React.Component<Props, State> {
   }
 
   getWalletSummary = () => {
-    const { balance, balanceReport } = this.props.rewardsPanelData
-    const { rates } = balance
+    const { parameters, balanceReport } = this.props.rewardsPanelData
 
     let props = {}
 
@@ -224,10 +227,10 @@ export class Panel extends React.Component<Props, State> {
         const item = balanceReport[key]
 
         if (item !== 0) {
-          const tokens = item.toFixed(1)
+          const tokens = item.toFixed(3)
           props[key] = {
             tokens,
-            converted: utils.convertBalance(item, rates)
+            converted: utils.convertBalance(item, parameters.rate)
           }
         }
       }
@@ -507,8 +510,7 @@ export class Panel extends React.Component<Props, State> {
   }
 
   generateAmounts = (publisher?: RewardsExtension.Publisher) => {
-    const { tipAmounts, walletProperties } = this.props.rewardsPanelData
-    const { rates } = this.props.rewardsPanelData.balance
+    const { tipAmounts, parameters } = this.props.rewardsPanelData
 
     const publisherKey = publisher && publisher.publisher_key
     let publisherAmounts = null
@@ -520,8 +522,8 @@ export class Panel extends React.Component<Props, State> {
     let initialAmounts = this.defaultTipAmounts
     if (publisherAmounts) {
       initialAmounts = publisherAmounts
-    } else if (walletProperties) {
-      const walletAmounts = walletProperties.defaultMonthlyTipChoices
+    } else if (parameters) {
+      const walletAmounts = parameters.monthlyTipChoices
       if (walletAmounts.length) {
         initialAmounts = walletAmounts
       }
@@ -531,15 +533,15 @@ export class Panel extends React.Component<Props, State> {
 
     return amounts.map((value: number) => {
       return {
-        tokens: value.toFixed(1),
-        converted: utils.convertBalance(value, rates),
+        tokens: value.toFixed(3),
+        converted: utils.convertBalance(value, parameters.rate),
         selected: false
       }
     })
   }
 
   getContribution = (publisher?: RewardsExtension.Publisher) => {
-    let defaultContribution = '0.0'
+    let defaultContribution = '0.000'
     const { recurringTips } = this.props.rewardsPanelData
 
     if (!recurringTips ||
@@ -549,7 +551,7 @@ export class Panel extends React.Component<Props, State> {
 
     recurringTips.map((tip: any) => {
       if (tip.publisherKey === publisher.publisher_key) {
-        defaultContribution = tip.amount.toFixed(1)
+        defaultContribution = tip.amount.toFixed(3)
       }
     })
 
@@ -679,18 +681,17 @@ export class Panel extends React.Component<Props, State> {
   }
 
   render () {
-    const { pendingContributionTotal, enabledAC, externalWallet, balance, promotions } = this.props.rewardsPanelData
-    const { rates } = this.props.rewardsPanelData.balance
+    const { pendingContributionTotal, enabledAC, externalWallet, balance, promotions, parameters } = this.props.rewardsPanelData
     const publisher: RewardsExtension.Publisher | undefined = this.getPublisher()
     const total = balance.total || 0
-    const converted = utils.convertBalance(total, rates)
+    const converted = utils.convertBalance(total, parameters.rate)
     const notification = this.getNotification()
     const notificationId = this.getNotificationProp('id', notification)
     const notificationType = this.getNotificationProp('type', notification)
     const notificationClick = this.getNotificationClickEvent(notificationType, notificationId)
     const defaultContribution = this.getContribution(publisher)
     const checkmark = publisher && utils.isPublisherConnectedOrVerified(publisher.status)
-    const tipAmounts = defaultContribution !== '0.0'
+    const tipAmounts = defaultContribution !== '0.000'
       ? this.generateAmounts(publisher)
       : undefined
     const { onlyAnonWallet } = this.props
@@ -702,7 +703,7 @@ export class Panel extends React.Component<Props, State> {
     }
 
     const pendingTotal = parseFloat(
-      (pendingContributionTotal || 0).toFixed(1))
+      (pendingContributionTotal || 0).toFixed(3))
 
     let faviconUrl
     if (publisher && publisher.url) {
@@ -726,7 +727,7 @@ export class Panel extends React.Component<Props, State> {
         compact={true}
         contentPadding={false}
         gradientTop={this.gradientColor}
-        balance={total.toFixed(1)}
+        balance={total.toFixed(3)}
         converted={utils.formatConverted(converted)}
         actions={this.getActions()}
         showCopy={false}

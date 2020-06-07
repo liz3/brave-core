@@ -7,12 +7,12 @@ import BigNumber from 'bignumber.js'
 import { getMessage } from './background/api/locale_api'
 import { WalletState } from '../../ui/components/walletWrapper'
 
-export const convertBalance = (tokens: number, rates: Record<string, number> | undefined, currency: string = 'USD'): string => {
-  if (tokens === 0 || !rates || !rates[currency]) {
+export const convertBalance = (tokens: number, rate: number): string => {
+  if (tokens === 0) {
     return '0.00'
   }
 
-  const converted = tokens * rates[currency]
+  const converted = tokens * rate
 
   if (isNaN(converted)) {
     return '0.00'
@@ -26,18 +26,18 @@ export const formatConverted = (converted: string, currency: string = 'USD'): st
 }
 
 export const handleContributionAmount = (amount: string) => {
-  let result = '0.0'
+  let result = '0.000'
   const amountSplit = amount.split('.')
   if (amountSplit && amountSplit[0].length > 18) {
-    const result = new BigNumber(amount).dividedBy('1e18').toFixed(1, BigNumber.ROUND_UP)
+    const result = new BigNumber(amount).dividedBy('1e18').toFixed(3, BigNumber.ROUND_UP)
 
     return result
   } else {
-    result = parseFloat(amount).toFixed(1)
+    result = parseFloat(amount).toFixed(3)
   }
 
   if (result === 'NaN') {
-    return '0.0'
+    return '0.000'
   }
 
   return result

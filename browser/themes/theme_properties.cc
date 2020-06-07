@@ -37,6 +37,7 @@ base::Optional<SkColor> MaybeGetDefaultColorForBraveLightUi(int id) {
       return kLightToolbar;
     case ThemeProperties::COLOR_TAB_FOREGROUND_ACTIVE_FRAME_ACTIVE:
     case ThemeProperties::COLOR_BOOKMARK_TEXT:
+    case BraveThemeProperties::COLOR_BOOKMARK_BAR_INSTRUCTIONS_TEXT:
     case ThemeProperties::COLOR_TAB_FOREGROUND_INACTIVE_FRAME_ACTIVE:
     case ThemeProperties::COLOR_TOOLBAR_BUTTON_ICON:
       return kLightToolbarIcon;
@@ -81,6 +82,7 @@ base::Optional<SkColor> MaybeGetDefaultColorForBraveDarkUi(int id) {
     case ThemeProperties::COLOR_TAB_FOREGROUND_ACTIVE_FRAME_ACTIVE:
       return SkColorSetRGB(0xF3, 0xF3, 0xF3);
     case ThemeProperties::COLOR_BOOKMARK_TEXT:
+    case BraveThemeProperties::COLOR_BOOKMARK_BAR_INSTRUCTIONS_TEXT:
     case ThemeProperties::COLOR_TAB_FOREGROUND_INACTIVE_FRAME_ACTIVE:
       return SkColorSetRGB(0xFF, 0xFF, 0xFF);
     case ThemeProperties::COLOR_TOOLBAR_BUTTON_ICON:
@@ -123,6 +125,7 @@ base::Optional<SkColor> MaybeGetDefaultColorForPrivateUi(int id) {
     case ThemeProperties::COLOR_TAB_FOREGROUND_ACTIVE_FRAME_ACTIVE:
       return SkColorSetRGB(0xF3, 0xF3, 0xF3);
     case ThemeProperties::COLOR_BOOKMARK_TEXT:
+    case BraveThemeProperties::COLOR_BOOKMARK_BAR_INSTRUCTIONS_TEXT:
     case ThemeProperties::COLOR_TAB_FOREGROUND_INACTIVE_FRAME_ACTIVE:
       return SkColorSetRGB(0xFF, 0xFF, 0xFF);
     case ThemeProperties::COLOR_TOOLBAR_BUTTON_ICON:
@@ -139,6 +142,14 @@ base::Optional<SkColor> MaybeGetDefaultColorForPrivateUi(int id) {
 
 }  // namespace
 
+namespace BraveThemeProperties {
+
+bool IsBraveThemeProperties(int id) {
+  return id >= BRAVE_THEME_PROPERTIES_START &&
+         id <= BRAVE_THEME_PROPERTIES_LAST;
+}
+
+}  // namespace BraveThemeProperties
 // Returns a |nullopt| if the UI color is not handled by Brave.
 base::Optional<SkColor> MaybeGetDefaultColorForBraveUi(
     int id, bool incognito, dark_mode::BraveDarkModeType dark_mode) {

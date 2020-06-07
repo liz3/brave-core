@@ -107,21 +107,21 @@ struct VisitData {
   string favicon_url;
 };
 
-struct WalletProperties {
-  double fee_amount;
-  array<double> parameters_choices;
-  array<double> default_tip_choices;
-  array<double> default_monthly_tip_choices;
+struct RewardsParameters {
+  double rate;
+  double auto_contribute_choice;
+  array<double> auto_contribute_choices;
+  array<double> tip_choices;
+  array<double> monthly_tip_choices;
 };
 
 struct Balance {
   double total;
   string user_funds;
-  map<string, double> rates;
   map<string, double> wallets;
 };
 
-struct AutoContributeProps {
+struct AutoContributeProperties {
   bool enabled_contribute;
   uint64 contribution_min_time;
   int32 contribution_min_visits;
@@ -197,19 +197,10 @@ enum ContributionRetry {
   STEP_FINAL = 10      // Phase 2
 };
 
-struct ReconcileInfo {
-  string viewing_id;
-  string amount;
-  ContributionRetry retry_step;
-  int32 retry_level;
-};
-
 struct RewardsInternalsInfo {
   string payment_id;
   bool is_key_info_seed_valid;
   uint64 boot_stamp;
-
-  map<string, ReconcileInfo> current_reconciles;
 };
 
 enum Result {
@@ -538,5 +529,12 @@ struct UrlResponse {
   int32 status_code;
   string body;
   map<string, string> headers;
+};
+
+enum InlineTipsPlatforms {
+  NONE = 0,
+  REDDIT = 1,
+  TWITTER = 2,
+  GITHUB = 3
 };
 

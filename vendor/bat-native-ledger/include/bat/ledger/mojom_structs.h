@@ -25,8 +25,8 @@ using ActivityInfoFilterOrderPairPtr = mojom::ActivityInfoFilterOrderPairPtr;
 
 using ActivityMonth = mojom::ActivityMonth;
 
-using AutoContributeProps = mojom::AutoContributeProps;
-using AutoContributePropsPtr = mojom::AutoContributePropsPtr;
+using AutoContributeProperties = mojom::AutoContributeProperties;
+using AutoContributePropertiesPtr = mojom::AutoContributePropertiesPtr;
 
 using Balance = mojom::Balance;
 using BalancePtr = mojom::BalancePtr;
@@ -83,6 +83,8 @@ using ExcludeFilter = mojom::ExcludeFilter;
 using ExternalWallet = mojom::ExternalWallet;
 using ExternalWalletPtr = mojom::ExternalWalletPtr;
 
+using InlineTipsPlatforms = mojom::InlineTipsPlatforms;
+
 using MediaEventInfo = mojom::MediaEventInfo;
 using MediaEventInfoPtr = mojom::MediaEventInfoPtr;
 
@@ -120,9 +122,6 @@ using PublisherStatus = mojom::PublisherStatus;
 
 using PublisherExclude = mojom::PublisherExclude;
 
-using ReconcileInfo = mojom::ReconcileInfo;
-using ReconcileInfoPtr = mojom::ReconcileInfoPtr;
-
 using RecurringTip = mojom::RecurringTip;
 using RecurringTipPtr = mojom::RecurringTipPtr;
 
@@ -132,6 +131,9 @@ using Result = mojom::Result;
 
 using RewardsInternalsInfo = mojom::RewardsInternalsInfo;
 using RewardsInternalsInfoPtr = mojom::RewardsInternalsInfoPtr;
+
+using RewardsParameters = mojom::RewardsParameters;
+using RewardsParametersPtr = mojom::RewardsParametersPtr;
 
 using RewardsType = mojom::RewardsType;
 
@@ -180,9 +182,6 @@ using UrlResponsePtr = mojom::UrlResponsePtr;
 
 using VisitData = mojom::VisitData;
 using VisitDataPtr = mojom::VisitDataPtr;
-
-using WalletProperties = mojom::WalletProperties;
-using WalletPropertiesPtr = mojom::WalletPropertiesPtr;
 
 using WalletStatus = mojom::WalletStatus;
 

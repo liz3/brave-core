@@ -41,14 +41,6 @@ void LedgerClientMojoProxy::LoadLedgerState(LoadLedgerStateCallback callback) {
       std::bind(LedgerClientMojoProxy::OnLoadLedgerState, holder, _1, _2));
 }
 
-void LedgerClientMojoProxy::OnWalletProperties(
-    const ledger::Result result,
-    ledger::WalletPropertiesPtr properties) {
-  ledger_client_->OnWalletProperties(
-      result,
-      std::move(properties));
-}
-
 // static
 void LedgerClientMojoProxy::OnLoadPublisherState(
     CallbackHolder<LoadLedgerStateCallback>* holder,
@@ -69,29 +61,6 @@ void LedgerClientMojoProxy::LoadPublisherState(
           holder,
           _1,
           _2));
-}
-
-// static
-void LedgerClientMojoProxy::OnSaveLedgerState(
-    CallbackHolder<SaveLedgerStateCallback>* holder,
-    const ledger::Result result) {
-  DCHECK(holder);
-  if (holder->is_valid()) {
-    std::move(holder->get()).Run(result);
-  }
-  delete holder;
-}
-
-void LedgerClientMojoProxy::SaveLedgerState(
-    const std::string& ledger_state,
-    SaveLedgerStateCallback callback) {
-  auto* holder = new CallbackHolder<SaveLedgerStateCallback>(
-      AsWeakPtr(), std::move(callback));
-  ledger_client_->SaveLedgerState(
-      ledger_state,
-      std::bind(LedgerClientMojoProxy::OnSaveLedgerState,
-                holder,
-                _1));
 }
 
 void LedgerClientMojoProxy::OnReconcileComplete(

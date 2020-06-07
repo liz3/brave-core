@@ -28,9 +28,34 @@ export const onBalance = (balance: RewardsInternals.Balance) =>
     balance
   })
 
+export const getContributions = () => action(types.GET_CONTRIBUTIONS)
+
+export const onContributions = (contributions: RewardsInternals.ContributionInfo[]) =>
+  action(types.ON_CONTRIBUTIONS, {
+    contributions
+  })
+
 export const getPromotions = () => action(types.GET_PROMOTIONS)
 
 export const onPromotions = (promotions: RewardsInternals.Promotion[]) =>
   action(types.ON_PROMOTIONS, {
     promotions
   })
+
+export const getPartialLog = () => action(types.GET_PARTIAL_LOG)
+
+export const onGetPartialLog = (log: string) =>
+  action(types.ON_GET_PARTIAL_LOG, {
+    log
+  })
+
+export const getFullLog = () => action(types.GET_FULL_LOG)
+
+export const onGetFullLog = (log: string) =>
+  action(types.ON_GET_FULL_LOG, {
+    log
+  })
+
+export const clearLog = () => action(types.CLEAR_LOG)
+
+export const downloadCompleted = () => action(types.DOWNLOAD_COMPLETED)

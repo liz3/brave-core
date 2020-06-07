@@ -14,15 +14,14 @@ export const defaultState: RewardsTip.State = {
   currentTipAmount: '0.0',
   currentTipRecurring: false,
   recurringDonations: [],
-  walletInfo: {
-    choices: [],
-    defaultTipChoices: [],
-    defaultMonthlyTipChoices: []
+  parameters: {
+    rate: 0,
+    tipChoices: [],
+    monthlyTipChoices: []
   },
   reconcileStamp: 0,
   balance: {
     total: 0,
-    rates: {},
     wallets: {}
   }
 }
@@ -53,14 +52,12 @@ const publishersReducer: Reducer<RewardsTip.State> = (state: RewardsTip.State = 
       }
       break
     }
-    case types.GET_WALLET_PROPERTIES:
-      chrome.send('brave_rewards_tip.getWalletProperties')
+    case types.GET_REWARDS_PARAMETERS:
+      chrome.send('brave_rewards_tip.getRewardsParameters')
       break
-    case types.ON_WALLET_PROPERTIES: {
+    case types.ON_REWARDS_PARAMETERS: {
       state = { ...state }
-      if (payload.properties.status !== 1) {
-        state.walletInfo = payload.properties.wallet
-      }
+      state.parameters = payload.parameters
       break
     }
     case types.ON_TIP: {
@@ -76,7 +73,7 @@ const publishersReducer: Reducer<RewardsTip.State> = (state: RewardsTip.State = 
       ])
       state = { ...state }
       state.finished = true
-      state.currentTipAmount = amount.toFixed(1)
+      state.currentTipAmount = amount.toFixed(3)
       state.currentTipRecurring = payload.recurring
 
       break

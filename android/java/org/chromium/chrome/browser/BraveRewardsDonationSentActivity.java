@@ -189,9 +189,6 @@ public class BraveRewardsDonationSentActivity extends Activity implements BraveR
     public void OnWalletInitialized(int error_code) {}
 
     @Override
-    public void OnWalletProperties(int error_code) {}
-
-    @Override
     public void OnPublisherInfo(int tabId) {}
 
     @Override
@@ -219,7 +216,7 @@ public class BraveRewardsDonationSentActivity extends Activity implements BraveR
     public void OnGetRewardsMainEnabled(boolean enabled) {}
 
     @Override
-    public void OnGetAutoContributeProps() {}
+    public void OnGetAutoContributeProperties() {}
 
     @Override
     public void OnRecurringDonationUpdated() {}

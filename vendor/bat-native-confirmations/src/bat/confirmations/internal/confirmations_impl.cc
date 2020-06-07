@@ -837,7 +837,7 @@ void ConfirmationsImpl::SetWalletInfo(std::unique_ptr<WalletInfo> info) {
   wallet_info_ = WalletInfo(*info);
 
   BLOG(1, "SetWalletInfo:\n"
-      << "  Payment id: " << wallet_info_.payment_id
+      << "  Payment id: " << wallet_info_.payment_id << "\n"
       << "  Private key: ********");
 
   NotifyAdsIfConfirmationsIsReady();
@@ -1055,7 +1055,9 @@ uint64_t ConfirmationsImpl::GetAdNotificationsReceivedThisMonthForTransactions(
 
     if (transaction_timestamp_exploded.year == now_exploded.year &&
         transaction_timestamp_exploded.month == now_exploded.month &&
-        transaction.estimated_redemption_value > 0.0) {
+        transaction.estimated_redemption_value > 0.0 &&
+        ConfirmationType(transaction.confirmation_type) ==
+            ConfirmationType::kViewed) {
       ad_notifications_received_this_month++;
     }
   }

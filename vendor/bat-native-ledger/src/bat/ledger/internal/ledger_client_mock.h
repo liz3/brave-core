@@ -23,10 +23,6 @@ class MockLedgerClient : public LedgerClient {
   MockLedgerClient();
   ~MockLedgerClient() override;
 
-  MOCK_METHOD2(OnWalletProperties, void(
-      ledger::Result result,
-      ledger::WalletPropertiesPtr));
-
   MOCK_METHOD4(OnReconcileComplete, void(
       Result result,
       const std::string& contribution_id,
@@ -35,10 +31,6 @@ class MockLedgerClient : public LedgerClient {
 
   MOCK_METHOD1(LoadLedgerState, void(
       ledger::OnLoadCallback callback));
-
-  MOCK_METHOD2(SaveLedgerState, void(
-      const std::string& ledger_state,
-      ledger::ResultCallback callback));
 
   MOCK_METHOD1(LoadPublisherState, void(
       ledger::OnLoadCallback callback));
@@ -78,7 +70,7 @@ class MockLedgerClient : public LedgerClient {
       const std::string& publisher_key,
       bool exclude));
 
-  MOCK_CONST_METHOD4(Log, void(
+  MOCK_METHOD4(Log, void(
       const char* file,
       const int line,
       const int verbose_level,

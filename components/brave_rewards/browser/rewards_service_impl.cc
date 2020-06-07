@@ -20,9 +20,8 @@
 #include "base/files/important_file_writer.h"
 #include "base/i18n/time_formatting.h"
 #include "base/json/json_reader.h"
-#include "base/json/json_writer.h"
 #include "base/json/json_string_value_serializer.h"
-#include "base/time/time.h"
+#include "base/json/json_writer.h"
 #include "base/logging.h"
 #include "base/sequenced_task_runner.h"
 #include "base/strings/string_number_conversions.h"
@@ -31,13 +30,14 @@
 #include "base/task/post_task.h"
 #include "base/task_runner_util.h"
 #include "base/threading/sequenced_task_runner_handle.h"
-#include "bat/ledger/ledger.h"
+#include "base/time/time.h"
 #include "bat/ledger/global_constants.h"
+#include "bat/ledger/ledger.h"
 #include "bat/ledger/mojom_structs.h"
 #include "bat/ledger/transactions_info.h"
 #include "brave/base/containers/utils.h"
+#include "brave/browser/brave_rewards/rewards_service_factory.h"
 #include "brave/browser/ui/webui/brave_rewards_source.h"
-#include "brave/components/brave_rewards/common/pref_names.h"
 #include "brave/common/brave_channel_info.h"
 #include "brave/components/brave_ads/browser/ads_service.h"
 #include "brave/components/brave_ads/browser/ads_service_factory.h"
@@ -47,16 +47,20 @@
 #include "brave/components/brave_rewards/browser/auto_contribution_props.h"
 #include "brave/components/brave_rewards/browser/balance_report.h"
 #include "brave/components/brave_rewards/browser/content_site.h"
+#include "brave/components/brave_rewards/browser/contribution_info.h"
+#include "brave/components/brave_rewards/browser/file_util.h"
+#include "brave/components/brave_rewards/browser/logging.h"
+#include "brave/components/brave_rewards/browser/logging_util.h"
 #include "brave/components/brave_rewards/browser/publisher_banner.h"
 #include "brave/components/brave_rewards/browser/rewards_database.h"
 #include "brave/components/brave_rewards/browser/rewards_notification_service.h"
 #include "brave/components/brave_rewards/browser/rewards_notification_service_impl.h"
 #include "brave/components/brave_rewards/browser/rewards_p3a.h"
-#include "brave/browser/brave_rewards/rewards_service_factory.h"
+#include "brave/components/brave_rewards/browser/rewards_parameters.h"
 #include "brave/components/brave_rewards/browser/rewards_service_observer.h"
 #include "brave/components/brave_rewards/browser/static_values.h"
 #include "brave/components/brave_rewards/browser/switches.h"
-#include "brave/components/brave_rewards/browser/wallet_properties.h"
+#include "brave/components/brave_rewards/common/pref_names.h"
 #include "brave/components/services/bat_ledger/public/cpp/ledger_client_mojo_proxy.h"
 #include "chrome/browser/bitmap_fetcher/bitmap_fetcher_service_factory.h"
 #include "chrome/browser/browser_process_impl.h"
@@ -104,6 +108,11 @@ static const unsigned int kRetriesCountOnNetworkChange = 1;
 
 namespace {
 
+base::File g_diagnostic_log;
+const int kDiagnosticLogMaxVerboseLevel = 6;
+const int kTailDiagnosticLogToNumLines = 20000;
+const int kDiagnosticLogMaxFileSize = 10 * (1024 * 1024);
+
 ContentSite PublisherInfoToContentSite(
     const ledger::PublisherInfo& publisher_info) {
   ContentSite content_site(publisher_info.id);
@@ -146,7 +155,6 @@ std::pair<std::string, base::Value> LoadStateOnFileTaskRunner(
 
   // Make sure the file isn't empty.
   if (!success || data.empty()) {
-    VLOG(0) << "Failed to read file: " << path.MaybeAsASCII();
     return {};
   }
   std::pair<std::string, base::Value> result;
@@ -197,9 +205,9 @@ std::string LoadOnFileTaskRunner(const base::FilePath& path) {
 
   // Make sure the file isn't empty.
   if (!success || data.empty()) {
-    VLOG(0) << "Failed to read file: " << path.MaybeAsASCII();
-    return std::string();
+    return "";
   }
+
   return data;
 }
 
@@ -216,6 +224,32 @@ bool ResetOnFilesTaskRunner(const std::vector<base::FilePath>& paths) {
   }
 
   return res;
+}
+
+std::string LoadDiagnosticLogOnFileTaskRunner(
+    const base::FilePath& path,
+    const int num_lines) {
+  if (!base::PathExists(path)) {
+    return "";
+  }
+
+  std::string value;
+  if (!TailFileAsString(&g_diagnostic_log, num_lines, &value)) {
+    return base::StringPrintf("ERROR: %s",
+        GetLastFileError(&g_diagnostic_log).c_str());
+  }
+
+  return value;
+}
+
+bool ClearDiagnosticLogOnFileTaskRunner(const base::FilePath& path) {
+  if (!base::PathExists(path)) {
+    return true;
+  }
+
+  g_diagnostic_log.Close();
+
+  return base::DeleteFile(path, false);
 }
 
 void EnsureRewardsBaseDirectoryExists(const base::FilePath& path) {
@@ -271,6 +305,22 @@ net::NetworkTrafficAnnotationTag GetNetworkTrafficAnnotationTagForURLLoad() {
       })");
 }
 
+ledger::InlineTipsPlatforms ConvertInlineTipStringToPlatform(
+    const std::string& key) {
+  if (key == "reddit") {
+    return ledger::InlineTipsPlatforms::REDDIT;
+  }
+  if (key == "twitter") {
+    return ledger::InlineTipsPlatforms::TWITTER;
+  }
+  if (key == "github") {
+    return ledger::InlineTipsPlatforms::GITHUB;
+  }
+
+  NOTREACHED();
+  return ledger::InlineTipsPlatforms::TWITTER;
+}
+
 const char pref_prefix[] = "brave.rewards.";
 
 }  // namespace
@@ -286,12 +336,14 @@ bool IsMediaLink(const GURL& url,
 
 // read comment about file pathes at src\base\files\file_path.h
 #if defined(OS_WIN)
+const base::FilePath::StringType kDiagnosticLogPath(L"Rewards.log");
 const base::FilePath::StringType kLedger_state(L"ledger_state");
 const base::FilePath::StringType kPublisher_state(L"publisher_state");
 const base::FilePath::StringType kPublisher_info_db(L"publisher_info_db");
 const base::FilePath::StringType kPublishers_list(L"publishers_list");
 const base::FilePath::StringType kRewardsStatePath(L"rewards_service");
 #else
+const base::FilePath::StringType kDiagnosticLogPath("Rewards.log");
 const base::FilePath::StringType kLedger_state("ledger_state");
 const base::FilePath::StringType kPublisher_state("publisher_state");
 const base::FilePath::StringType kPublisher_info_db("publisher_info_db");
@@ -315,6 +367,7 @@ RewardsServiceImpl::RewardsServiceImpl(Profile* profile)
           {base::ThreadPool(), base::MayBlock(),
            base::TaskPriority::USER_VISIBLE,
            base::TaskShutdownBehavior::BLOCK_SHUTDOWN})),
+      diagnostic_log_path_(profile_->GetPath().Append(kDiagnosticLogPath)),
       ledger_state_path_(profile_->GetPath().Append(kLedger_state)),
       publisher_state_path_(profile_->GetPath().Append(kPublisher_state)),
       publisher_info_db_path_(profile->GetPath().Append(kPublisher_info_db)),
@@ -510,7 +563,7 @@ void RewardsServiceImpl::CreateWalletAttestationResult(
     const std::string& result_string,
     const bool attestation_passed) {
   if (!token_received) {
-    VLOG(0) << "CreateWalletAttestationResult error: " << result_string;
+    BLOG(0, "CreateWalletAttestationResult error: " << result_string);
     OnWalletInitialized(ledger::Result::LEDGER_ERROR);
     return;
   }
@@ -737,7 +790,6 @@ void RewardsServiceImpl::Shutdown() {
 
 void RewardsServiceImpl::OnWalletInitialized(ledger::Result result) {
   if (result == ledger::Result::WALLET_CREATED ||
-      result == ledger::Result::NO_LEDGER_STATE ||
       result == ledger::Result::LEDGER_OK) {
     is_wallet_initialized_ = true;
   }
@@ -746,8 +798,6 @@ void RewardsServiceImpl::OnWalletInitialized(ledger::Result result) {
     ready_.Signal();
 
   if (result == ledger::Result::WALLET_CREATED) {
-    SetRewardsMainEnabled(true);
-    SetAutoContribute(true);
     StartNotificationTimers(true);
 
     // Record P3A:
@@ -765,45 +815,24 @@ void RewardsServiceImpl::OnWalletInitialized(ledger::Result result) {
   }
 }
 
-void RewardsServiceImpl::OnWalletProperties(
-    const ledger::Result result,
-    ledger::WalletPropertiesPtr properties) {
-  std::unique_ptr<brave_rewards::WalletProperties> wallet_properties;
-  for (auto& observer : observers_) {
-    if (properties) {
-      wallet_properties.reset(new brave_rewards::WalletProperties);
-      wallet_properties->parameters_choices = properties->parameters_choices;
-      wallet_properties->monthly_amount = properties->fee_amount;
-      wallet_properties->default_tip_choices = properties->default_tip_choices;
-      wallet_properties->default_monthly_tip_choices =
-          properties->default_monthly_tip_choices;
-    }
-    // webui
-    observer.OnWalletProperties(this,
-                                static_cast<int>(result),
-                                std::move(wallet_properties));
-  }
-}
-
-void RewardsServiceImpl::OnGetAutoContributeProps(
-    const GetAutoContributePropsCallback& callback,
-    ledger::AutoContributePropsPtr props) {
+void RewardsServiceImpl::OnGetAutoContributeProperties(
+    const GetAutoContributePropertiesCallback& callback,
+    ledger::AutoContributePropertiesPtr props) {
   if (!props) {
     callback.Run(nullptr);
     return;
   }
 
-  auto auto_contri_props =
-    std::make_unique<brave_rewards::AutoContributeProps>();
-  auto_contri_props->enabled_contribute = props->enabled_contribute;
-  auto_contri_props->contribution_min_time = props->contribution_min_time;
-  auto_contri_props->contribution_min_visits = props->contribution_min_visits;
-  auto_contri_props->contribution_non_verified =
+  auto properties = std::make_unique<brave_rewards::AutoContributeProps>();
+  properties->enabled_contribute = props->enabled_contribute;
+  properties->contribution_min_time = props->contribution_min_time;
+  properties->contribution_min_visits = props->contribution_min_visits;
+  properties->contribution_non_verified =
     props->contribution_non_verified;
-  auto_contri_props->contribution_videos = props->contribution_videos;
-  auto_contri_props->reconcile_stamp = props->reconcile_stamp;
+  properties->contribution_videos = props->contribution_videos;
+  properties->reconcile_stamp = props->reconcile_stamp;
 
-  callback.Run(std::move(auto_contri_props));
+  callback.Run(std::move(properties));
 }
 
 void RewardsServiceImpl::OnGetRewardsInternalsInfo(
@@ -820,19 +849,18 @@ void RewardsServiceImpl::OnGetRewardsInternalsInfo(
   rewards_internals_info->is_key_info_seed_valid = info->is_key_info_seed_valid;
   rewards_internals_info->boot_stamp = info->boot_stamp;
 
-  // TODO(https://github.com/brave/brave-browser/issues/8633)
-  // add active contributions
-
   std::move(callback).Run(std::move(rewards_internals_info));
 }
 
-void RewardsServiceImpl::GetAutoContributeProps(
-    const GetAutoContributePropsCallback& callback) {
+void RewardsServiceImpl::GetAutoContributeProperties(
+    const GetAutoContributePropertiesCallback& callback) {
   if (!Connected())
     return;
 
-  bat_ledger_->GetAutoContributeProps(base::BindOnce(
-        &RewardsServiceImpl::OnGetAutoContributeProps, AsWeakPtr(), callback));
+  bat_ledger_->GetAutoContributeProperties(base::BindOnce(
+        &RewardsServiceImpl::OnGetAutoContributeProperties,
+        AsWeakPtr(),
+        callback));
 }
 
 void RewardsServiceImpl::OnRecoverWallet(
@@ -866,11 +894,6 @@ void RewardsServiceImpl::OnReconcileComplete(
 
 void RewardsServiceImpl::LoadLedgerState(
     ledger::OnLoadCallback callback) {
-  if (!profile_->GetPrefs()->GetBoolean(prefs::kBraveRewardsEnabledMigrated)) {
-    bat_ledger_->GetRewardsMainEnabled(
-        base::BindOnce(&RewardsServiceImpl::SetRewardsMainEnabledPref,
-          AsWeakPtr()));
-  }
   base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
       base::BindOnce(&LoadStateOnFileTaskRunner, ledger_state_path_),
       base::BindOnce(&RewardsServiceImpl::OnLedgerStateLoaded,
@@ -885,11 +908,6 @@ void RewardsServiceImpl::OnLedgerStateLoaded(
     return;
 
   if (state.second.is_dict()) {
-    // Extract some properties from the parsed json.
-    base::Value* auto_contribute = state.second.FindKey("auto_contribute");
-    if (auto_contribute && auto_contribute->is_bool()) {
-      auto_contributions_enabled_ = auto_contribute->GetBool();
-    }
     // Record stats.
     RecordBackendP3AStats();
     MaybeRecordInitialAdsP3AState(profile_->GetPrefs());
@@ -930,39 +948,6 @@ void RewardsServiceImpl::OnPublisherStateLoaded(
       data);
 }
 
-void RewardsServiceImpl::SaveLedgerState(
-    const std::string& ledger_state,
-    ledger::ResultCallback callback) {
-  if (reset_states_) {
-    return;
-  }
-  base::ImportantFileWriter writer(
-      ledger_state_path_, file_task_runner_);
-
-  writer.RegisterOnNextWriteCallbacks(
-      base::Closure(),
-      base::Bind(
-        &PostWriteCallback,
-        base::Bind(&RewardsServiceImpl::OnLedgerStateSaved,
-            AsWeakPtr(),
-            callback),
-        base::SequencedTaskRunnerHandle::Get()));
-
-  writer.WriteNow(std::make_unique<std::string>(ledger_state));
-}
-
-void RewardsServiceImpl::OnLedgerStateSaved(
-    ledger::ResultCallback callback,
-    bool success) {
-  if (!Connected()) {
-    return;
-  }
-
-  callback(success
-           ? ledger::Result::LEDGER_OK
-           : ledger::Result::NO_LEDGER_STATE);
-}
-
 void RewardsServiceImpl::LoadNicewareList(
   ledger::GetNicewareListCallback callback) {
   if (!Connected())
@@ -972,7 +957,7 @@ void RewardsServiceImpl::LoadNicewareList(
       IDR_BRAVE_REWARDS_NICEWARE_LIST).as_string();
 
   if (data.empty()) {
-    VLOG(0) << "Failed to read in niceware list";
+    BLOG(0, "Failed to read in niceware list");
   }
   callback(data.empty() ? ledger::Result::LEDGER_ERROR
                         : ledger::Result::LEDGER_OK, data);
@@ -1110,26 +1095,35 @@ void RewardsServiceImpl::OnURLLoaderComplete(
   callback(response);
 }
 
-void RewardsServiceImpl::OnFetchWalletProperties(
-    const ledger::Result result,
-    ledger::WalletPropertiesPtr properties) {
-  OnWalletProperties(result, std::move(properties));
+void RewardsServiceImpl::OnGetRewardsParameters(
+    GetRewardsParametersCallback callback,
+    ledger::RewardsParametersPtr properties) {
+  if (!properties) {
+    std::move(callback).Run(nullptr);
+    return;
+  }
+
+  std::unique_ptr<brave_rewards::RewardsParameters> parameters(
+      new brave_rewards::RewardsParameters);
+  parameters->rate = properties->rate;
+  parameters->auto_contribute_choice = properties->auto_contribute_choice;
+  parameters->auto_contribute_choices = properties->auto_contribute_choices;
+  parameters->tip_choices = properties->tip_choices;
+  parameters->monthly_tip_choices = properties->monthly_tip_choices;
+
+  std::move(callback).Run(std::move(parameters));
 }
 
-void RewardsServiceImpl::FetchWalletProperties() {
-  if (ready().is_signaled()) {
-    if (!Connected()) {
-      return;
-    }
-
-    bat_ledger_->FetchWalletProperties(
-        base::BindOnce(&RewardsServiceImpl::OnFetchWalletProperties,
-                       AsWeakPtr()));
-  } else {
-    ready().Post(FROM_HERE,
-        base::Bind(&brave_rewards::RewardsService::FetchWalletProperties,
-            base::Unretained(this)));
+void RewardsServiceImpl::GetRewardsParameters(
+    GetRewardsParametersCallback callback) {
+  if (!Connected()) {
+    return;
   }
+
+  bat_ledger_->GetRewardsParameters(
+      base::BindOnce(&RewardsServiceImpl::OnGetRewardsParameters,
+                     AsWeakPtr(),
+                     std::move(callback)));
 }
 
 void RewardsServiceImpl::OnFetchPromotions(
@@ -1392,18 +1386,19 @@ void RewardsServiceImpl::SetRewardsMainEnabled(bool enabled) {
     return;
   }
 
-  if (!enabled) {
-    RecordRewardsDisabledForSomeMetrics();
-  }
-  SetRewardsMainEnabledPref(enabled);
   bat_ledger_->SetRewardsMainEnabled(enabled);
   TriggerOnRewardsMainEnabled(enabled);
+
 #if BUILDFLAG(ENABLE_GREASELION)
   if (greaselion_service_) {
     greaselion_service_->SetFeatureEnabled(greaselion::REWARDS, enabled);
     greaselion_service_->SetFeatureEnabled(greaselion::TWITTER_TIPS, enabled);
   }
 #endif
+
+  if (!enabled) {
+    RecordRewardsDisabledForSomeMetrics();
+  }
 }
 
 void RewardsServiceImpl::GetRewardsMainEnabled(
@@ -1413,16 +1408,6 @@ void RewardsServiceImpl::GetRewardsMainEnabled(
   }
 
   bat_ledger_->GetRewardsMainEnabled(callback);
-}
-
-void RewardsServiceImpl::SetRewardsMainEnabledPref(bool enabled) {
-  profile_->GetPrefs()->SetBoolean(prefs::kBraveRewardsEnabled, enabled);
-  SetRewardsMainEnabledMigratedPref(true);
-}
-
-void RewardsServiceImpl::SetRewardsMainEnabledMigratedPref(bool enabled) {
-  profile_->GetPrefs()->SetBoolean(
-      prefs::kBraveRewardsEnabledMigrated, true);
 }
 
 void RewardsServiceImpl::SetCatalogIssuers(const std::string& json) {
@@ -1766,45 +1751,30 @@ void RewardsServiceImpl::SetPublisherAllowVideos(bool allow) const {
   bat_ledger_->SetPublisherAllowVideos(allow);
 }
 
-void RewardsServiceImpl::SetContributionAmount(const double amount) const {
+void RewardsServiceImpl::SetAutoContributionAmount(const double amount) const {
   if (!Connected()) {
     return;
   }
 
-  bat_ledger_->SetUserChangedContribution();
-  bat_ledger_->SetContributionAmount(amount);
+  bat_ledger_->SetAutoContributionAmount(amount);
 }
 
-// TODO(brave): Remove me (and pure virtual definition)
-// see https://github.com/brave/brave-core/commit/c4ef62c954a64fca18ae83ff8ffd611137323420#diff-aa3505dbf36b5d03d8ba0751e0c99904R385
-// and https://github.com/brave-intl/bat-native-ledger/commit/27f3ceb471d61c84052737ff201fe18cb9a6af32#diff-e303122e010480b2226895b9470891a3R135
-void RewardsServiceImpl::SetUserChangedContribution() const {
+void RewardsServiceImpl::GetAutoContributeEnabled(
+    GetAutoContributeEnabledCallback callback) {
   if (!Connected()) {
     return;
   }
 
-  bat_ledger_->SetUserChangedContribution();
+  bat_ledger_->GetAutoContributeEnabled(std::move(callback));
 }
 
-void RewardsServiceImpl::GetAutoContribute(
-    GetAutoContributeCallback callback) {
+void RewardsServiceImpl::SetAutoContributeEnabled(bool enabled) {
   if (!Connected()) {
     return;
   }
 
-  bat_ledger_->GetAutoContribute(std::move(callback));
-}
+  bat_ledger_->SetAutoContributeEnabled(enabled);
 
-void RewardsServiceImpl::SetAutoContribute(bool enabled) {
-  if (!Connected()) {
-    return;
-  }
-
-  bat_ledger_->SetAutoContribute(enabled);
-  auto_contributions_enabled_ = enabled;
-
-  // Record stats.
-  DCHECK(profile_->GetPrefs()->GetBoolean(prefs::kBraveRewardsEnabled));
   if (!enabled) {
     // Just record the disabled state.
     RecordAutoContributionsState(
@@ -1956,12 +1926,12 @@ void RewardsServiceImpl::OnPanelPublisherInfo(
                                   windowId);
 }
 
-void RewardsServiceImpl::GetContributionAmount(
-    const GetContributionAmountCallback& callback) {
+void RewardsServiceImpl::GetAutoContributionAmount(
+    const GetAutoContributionAmountCallback& callback) {
   if (!Connected())
     return;
 
-  bat_ledger_->GetContributionAmount(callback);
+  bat_ledger_->GetAutoContributionAmount(callback);
 }
 
 void RewardsServiceImpl::FetchFavIcon(const std::string& url,
@@ -1975,7 +1945,7 @@ void RewardsServiceImpl::FetchFavIcon(const std::string& url,
 
   auto it = current_media_fetchers_.find(url);
   if (it != current_media_fetchers_.end()) {
-    VLOG(1) << "Already fetching favicon: " << url;
+    BLOG(1, "Already fetching favicon: " << url);
     return;
   }
 
@@ -2260,7 +2230,7 @@ void RewardsServiceImpl::OnNotificationTimerFired() {
   if (!Connected())
     return;
 
-  bat_ledger_->GetBootStamp(
+  bat_ledger_->GetCreationStamp(
       base::BindOnce(&RewardsServiceImpl::MaybeShowBackupNotification,
         AsWeakPtr()));
   GetReconcileStamp(
@@ -2309,7 +2279,7 @@ void RewardsServiceImpl::ShowNotificationAddFunds(bool sufficient) {
 }
 
 void RewardsServiceImpl::MaybeShowNotificationTipsPaid() {
-  GetAutoContribute(base::BindOnce(
+  GetAutoContributeEnabled(base::BindOnce(
       &RewardsServiceImpl::ShowNotificationTipsPaid,
       AsWeakPtr()));
 }
@@ -2324,11 +2294,134 @@ void RewardsServiceImpl::ShowNotificationTipsPaid(bool ac_enabled) {
       "rewards_notification_tips_processed");
 }
 
+bool MaybeTailDiagnosticLog(
+    const int num_lines) {
+  if (!g_diagnostic_log.IsValid()) {
+    return false;
+  }
+
+  static bool first_run = true;
+
+  const int64_t length = g_diagnostic_log.GetLength();
+  if (length == -1) {
+    return false;
+  }
+
+  if (!first_run && length <= kDiagnosticLogMaxFileSize) {
+    return true;
+  }
+
+  first_run = false;
+
+  if (!TailFile(&g_diagnostic_log, num_lines)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool WriteToDiagnosticLogOnFileTaskRunner(
+    const base::FilePath& log_path,
+    const int num_lines,
+    const std::string& file,
+    const int line,
+    const int verbose_level,
+    const std::string& message) {
+  if (!InitializeLog(&g_diagnostic_log, log_path)) {
+    VLOG(0) << "Failed to initialize diagnostic log: "
+        << GetLastFileError(&g_diagnostic_log);
+
+    return false;
+  }
+
+  const base::Time time = base::Time::Now();
+
+  const std::string log_entry =
+      FriendlyFormatLogEntry(time, file, line, verbose_level, message);
+
+  if (!WriteToLog(&g_diagnostic_log, log_entry)) {
+    VLOG(0) << "Failed to write to diagnostic log: "
+        << GetLastFileError(&g_diagnostic_log);
+
+    return false;
+  }
+
+  if (!MaybeTailDiagnosticLog(num_lines)) {
+    VLOG(0) << "Failed to vacuum diagnostic log";
+
+    return false;
+  }
+
+  return true;
+}
+
+void RewardsServiceImpl::DiagnosticLog(
+    const std::string& file,
+    const int line,
+    const int verbose_level,
+    const std::string& message) {
+  if (profile_->IsOffTheRecord()) {
+    return;
+  }
+
+  if (verbose_level > kDiagnosticLogMaxVerboseLevel) {
+    return;
+  }
+
+  base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
+      base::BindOnce(&WriteToDiagnosticLogOnFileTaskRunner,
+          diagnostic_log_path_, kTailDiagnosticLogToNumLines, file, line,
+              verbose_level, message),
+      base::BindOnce(&RewardsServiceImpl::OnWriteToLogOnFileTaskRunner,
+          AsWeakPtr()));
+}
+
+void RewardsServiceImpl::OnWriteToLogOnFileTaskRunner(
+    const bool success) {
+  DCHECK(success);
+}
+
+void RewardsServiceImpl::LoadDiagnosticLog(
+      const int num_lines,
+      LoadDiagnosticLogCallback callback) {
+  base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
+      base::BindOnce(&LoadDiagnosticLogOnFileTaskRunner, diagnostic_log_path_,
+          num_lines),
+      base::BindOnce(&RewardsServiceImpl::OnLoadDiagnosticLogOnFileTaskRunner,
+          AsWeakPtr(),
+          std::move(callback)));
+}
+
+void RewardsServiceImpl::OnLoadDiagnosticLogOnFileTaskRunner(
+    LoadDiagnosticLogCallback callback,
+    const std::string& value) {
+  std::move(callback).Run(value);
+}
+
+void RewardsServiceImpl::ClearDiagnosticLog(
+    ClearDiagnosticLogCallback callback) {
+  base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
+      base::BindOnce(&ClearDiagnosticLogOnFileTaskRunner, diagnostic_log_path_),
+      base::BindOnce(&RewardsServiceImpl::OnClearDiagnosticLogOnFileTaskRunner,
+          AsWeakPtr(),
+          std::move(callback)));
+}
+
+void RewardsServiceImpl::OnClearDiagnosticLogOnFileTaskRunner(
+    ClearDiagnosticLogCallback callback,
+    const bool success) {
+  std::move(callback).Run(success);
+}
+
 void RewardsServiceImpl::Log(
     const char* file,
     const int line,
     const int verbose_level,
-    const std::string& message) const {
+    const std::string& message) {
+  DCHECK(file);
+
+  DiagnosticLog(file, line, verbose_level, message);
+
   const int vlog_level = ::logging::GetVlogLevelHelper(file, strlen(file));
   if (verbose_level <= vlog_level) {
     ::logging::LogMessage(file, line, -verbose_level).stream() << message;
@@ -2392,7 +2485,7 @@ void RewardsServiceImpl::HandleFlags(const std::string& options) {
       bool success = base::StringToInt(value, &reconcile_int);
 
       if (success && reconcile_int > 0) {
-        SetReconcileTime(reconcile_int);
+        SetReconcileInterval(reconcile_int);
       }
 
       continue;
@@ -2507,6 +2600,7 @@ void RewardsServiceImpl::SetLedgerEnvForTesting() {
   bat_ledger_service_->SetTesting();
 
   SetPublisherMinVisitTime(1);
+  SetShortRetries(true);
 
   // this is needed because we are using braveledger_request_util::buildURL
   // directly in BraveRewardsBrowserTest
@@ -2539,9 +2633,9 @@ void RewardsServiceImpl::GetDebug(const GetDebugCallback& callback) {
   bat_ledger_service_->GetDebug(callback);
 }
 
-void RewardsServiceImpl::GetReconcileTime(
-    const GetReconcileTimeCallback& callback) {
-  bat_ledger_service_->GetReconcileTime(callback);
+void RewardsServiceImpl::GetReconcileInterval(
+    GetReconcileIntervalCallback callback) {
+  bat_ledger_service_->GetReconcileInterval(std::move(callback));
 }
 
 void RewardsServiceImpl::GetShortRetries(
@@ -2557,8 +2651,8 @@ void RewardsServiceImpl::SetDebug(bool debug) {
   bat_ledger_service_->SetDebug(debug);
 }
 
-void RewardsServiceImpl::SetReconcileTime(int32_t time) {
-  bat_ledger_service_->SetReconcileTime(time);
+void RewardsServiceImpl::SetReconcileInterval(const int32_t interval) {
+  bat_ledger_service_->SetReconcileInterval(interval);
 }
 
 void RewardsServiceImpl::SetShortRetries(bool short_retries) {
@@ -2613,23 +2707,26 @@ RewardsServiceImpl::GetAllNotifications() {
   return notification_service_->GetAllNotifications();
 }
 
-void RewardsServiceImpl::SetInlineTipSetting(const std::string& key,
-                                             bool enabled) {
-  bat_ledger_->SetInlineTipSetting(key, enabled);
+void RewardsServiceImpl::SetInlineTippingPlatformEnabled(
+    const std::string& key,
+    bool enabled) {
+  const auto platform = ConvertInlineTipStringToPlatform(key);
+  bat_ledger_->SetInlineTippingPlatformEnabled(platform, enabled);
 }
 
-void RewardsServiceImpl::GetInlineTipSetting(
+void RewardsServiceImpl::GetInlineTippingPlatformEnabled(
       const std::string& key,
-      GetInlineTipSettingCallback callback) {
-  bat_ledger_->GetInlineTipSetting(
-      key,
+      GetInlineTippingPlatformEnabledCallback callback) {
+  const auto platform = ConvertInlineTipStringToPlatform(key);
+  bat_ledger_->GetInlineTippingPlatformEnabled(
+      platform,
       base::BindOnce(&RewardsServiceImpl::OnInlineTipSetting,
           AsWeakPtr(),
           std::move(callback)));
 }
 
 void RewardsServiceImpl::OnInlineTipSetting(
-    GetInlineTipSettingCallback callback,
+    GetInlineTippingPlatformEnabledCallback callback,
     bool enabled) {
   std::move(callback).Run(enabled);
 }
@@ -2765,7 +2862,6 @@ void RewardsServiceImpl::OnFetchBalance(FetchBalanceCallback callback,
 
   if (balance) {
     new_balance->total = balance->total;
-    new_balance->rates = base::FlatMapToMap(balance->rates);
     new_balance->wallets = base::FlatMapToMap(balance->wallets);
 
     if (balance->total > 0) {
@@ -3194,11 +3290,21 @@ void RewardsServiceImpl::OnRecordBackendP3AStatsContributions(
     queued_recurring = recurring_donation_size;
   }
 
-  const auto auto_contributions_state = auto_contributions_enabled_ ?
+  RecordTipsState(true, true, tips, queued_recurring);
+
+  GetAutoContributeEnabled(base::BindOnce(
+    &RewardsServiceImpl::OnRecordBackendP3AStatsAC,
+    AsWeakPtr(),
+    auto_contributions));
+}
+
+void RewardsServiceImpl::OnRecordBackendP3AStatsAC(
+    const int auto_contributions,
+    bool ac_enabled) {
+  const auto auto_contributions_state = ac_enabled ?
         AutoContributionsP3AState::kAutoContributeOn :
         AutoContributionsP3AState::kWalletCreatedAutoContributeOff;
   RecordAutoContributionsState(auto_contributions_state, auto_contributions);
-  RecordTipsState(true, true, tips, queued_recurring);
 }
 
 #if defined(OS_ANDROID)
@@ -3417,6 +3523,40 @@ void RewardsServiceImpl::OnGetAllMonthlyReportIds(
     GetAllMonthlyReportIdsCallback callback,
     const std::vector<std::string>& ids) {
   std::move(callback).Run(ids);
+}
+
+void RewardsServiceImpl::GetAllContributions(
+    GetAllContributionsCallback callback) {
+  bat_ledger_->GetAllContributions(
+      base::BindOnce(&RewardsServiceImpl::OnGetAllContributions,
+                     AsWeakPtr(),
+                     std::move(callback)));
+}
+
+void RewardsServiceImpl::OnGetAllContributions(
+    GetAllContributionsCallback callback,
+    ledger::ContributionInfoList contributions) {
+  std::vector<brave_rewards::ContributionInfo> converted;
+  for (const auto& contribution_item : contributions) {
+    brave_rewards::ContributionInfo contribution;
+    contribution.contribution_id = contribution_item->contribution_id;
+    contribution.amount = contribution_item->amount;
+    contribution.type = static_cast<int>(contribution_item->type);
+    contribution.step = static_cast<int>(contribution_item->step);
+    contribution.retry_count = contribution_item->retry_count;
+    contribution.created_at = contribution_item->created_at;
+    contribution.processor = static_cast<int>(contribution_item->processor);
+    for (const auto& publisher_item : contribution_item->publishers) {
+      brave_rewards::ContributionPublisher publisher;
+      publisher.contribution_id = publisher_item->contribution_id;
+      publisher.publisher_key = publisher_item->publisher_key;
+      publisher.total_amount = publisher_item->total_amount;
+      publisher.contributed_amount = publisher_item->contributed_amount;
+      contribution.publishers.push_back(std::move(publisher));
+    }
+    converted.push_back(std::move(contribution));
+  }
+  std::move(callback).Run(std::move(converted));
 }
 
 void RewardsServiceImpl::GetAllPromotions(GetAllPromotionsCallback callback) {

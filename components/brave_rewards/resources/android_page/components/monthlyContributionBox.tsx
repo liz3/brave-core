@@ -45,7 +45,7 @@ class MonthlyContributionBox extends React.Component<Props, State> {
   }
 
   getRows = () => {
-    const { balance, recurringList } = this.props.rewardsData
+    const { parameters, recurringList } = this.props.rewardsData
     let recurring: DetailRow[] = []
 
     if (!recurringList) {
@@ -68,8 +68,8 @@ class MonthlyContributionBox extends React.Component<Props, State> {
           src: faviconUrl
         },
         contribute: {
-          tokens: item.percentage.toFixed(1),
-          converted: utils.convertBalance(item.percentage, balance.rates)
+          tokens: item.percentage.toFixed(3),
+          converted: utils.convertBalance(item.percentage, parameters.rate)
         },
         url: item.url,
         type: 'recurring' as any,
@@ -86,7 +86,7 @@ class MonthlyContributionBox extends React.Component<Props, State> {
 
   render () {
     const {
-      balance,
+      parameters,
       recurringList,
       reconcileStamp
     } = this.props.rewardsData
@@ -95,7 +95,7 @@ class MonthlyContributionBox extends React.Component<Props, State> {
     const numRows = tipRows && tipRows.length
     const allSites = !(numRows > 5)
     const total = utils.tipsListTotal(recurringList)
-    const converted = utils.convertBalance(total, balance.rates)
+    const converted = utils.convertBalance(total, parameters.rate)
 
     return (
       <BoxMobile
@@ -115,7 +115,7 @@ class MonthlyContributionBox extends React.Component<Props, State> {
         }
         <List title={<StyledListContent>{getLocale('donationTotalMonthlyContribution')}</StyledListContent>}>
           <StyledTotalContent>
-            <Tokens value={total.toFixed(1)} converted={converted} />
+            <Tokens value={total.toFixed(3)} converted={converted} />
           </StyledTotalContent>
         </List>
         <List title={<StyledListContent>{getLocale('donationNextDate')}</StyledListContent>}>

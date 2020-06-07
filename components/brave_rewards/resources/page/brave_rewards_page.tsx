@@ -57,8 +57,8 @@ window.cr.define('brave_rewards', function () {
     getActions().onWalletCreateFailed()
   }
 
-  function walletProperties (properties: {status: number, wallet: Rewards.WalletProperties, monthlyAmount: number}) {
-    getActions().onWalletProperties(properties)
+  function rewardsParameters (properties: Rewards.RewardsParameters) {
+    getActions().onRewardsParameters(properties)
   }
 
   function promotions (properties: Rewards.PromotionResponse) {
@@ -113,8 +113,8 @@ window.cr.define('brave_rewards', function () {
     getActions().onCurrentTips(list)
   }
 
-  function initAutoContributeSettings (properties: any) {
-    getActions().onInitAutoContributeSettings(properties)
+  function autoContributeProperties (properties: any) {
+    getActions().onAutoContributeProperties(properties)
   }
 
   function adsData (adsData: Rewards.AdsData) {
@@ -198,7 +198,7 @@ window.cr.define('brave_rewards', function () {
     chrome.send('brave_rewards.getReconcileStamp')
     getActions().getContributeList()
     getActions().getBalance()
-    getActions().getWalletProperties()
+    getActions().getRewardsParameters()
     getCurrentBalanceReport()
 
     if (properties.type === 8) { // Rewards.RewardsType.ONE_TIME_TIP
@@ -254,7 +254,7 @@ window.cr.define('brave_rewards', function () {
     initialize,
     walletCreated,
     walletCreateFailed,
-    walletProperties,
+    rewardsParameters,
     promotions,
     claimPromotion,
     walletPassphrase,
@@ -268,7 +268,7 @@ window.cr.define('brave_rewards', function () {
     contributionAmount,
     recurringTips,
     currentTips,
-    initAutoContributeSettings,
+    autoContributeProperties,
     adsData,
     adsHistory,
     onToggleAdThumbUp,

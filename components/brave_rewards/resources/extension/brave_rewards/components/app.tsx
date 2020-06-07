@@ -63,6 +63,9 @@ export class RewardsPanel extends React.Component<Props, State> {
     if (walletCreated) {
       utils.getExternalWallet(this.actions, externalWallet)
       this.getBalance()
+      chrome.braveRewards.getRewardsParameters((parameters: RewardsExtension.RewardsParameters) => {
+        rewardsPanelActions.onRewardsParameters(parameters)
+      })
     }
   }
 
@@ -280,11 +283,12 @@ export class RewardsPanel extends React.Component<Props, State> {
       walletCorrupted,
       balance,
       externalWallet,
-      promotions
+      promotions,
+      parameters
     } = this.props.rewardsPanelData
 
     const total = balance.total || 0
-    const converted = utils.convertBalance(total, balance.rates)
+    const converted = utils.convertBalance(total, parameters.rate)
     const claimedPromotions = utils.getClaimedPromotions(promotions || [])
 
     if (!walletCreated || walletCorrupted) {
@@ -325,7 +329,7 @@ export class RewardsPanel extends React.Component<Props, State> {
                 compact={true}
                 contentPadding={false}
                 gradientTop={'249,251,252'}
-                balance={total.toFixed(1)}
+                balance={total.toFixed(3)}
                 showSecActions={false}
                 showCopy={false}
                 onlyAnonWallet={this.state.onlyAnonWallet}

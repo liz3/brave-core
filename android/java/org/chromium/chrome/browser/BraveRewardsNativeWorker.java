@@ -188,9 +188,9 @@ public class BraveRewardsNativeWorker {
         }
     }
 
-    public void GetWalletProperties() {
+    public void GetRewardsParameters() {
         synchronized(lock) {
-            nativeGetWalletProperties(mNativeBraveRewardsNativeWorker);
+            nativeGetRewardsParameters(mNativeBraveRewardsNativeWorker);
         }
     }
 
@@ -209,9 +209,9 @@ public class BraveRewardsNativeWorker {
         }
     }
 
-    public double GetWalletRate(String rate) {
+    public double GetWalletRate() {
         synchronized(lock) {
-            return nativeGetWalletRate(mNativeBraveRewardsNativeWorker, rate);
+            return nativeGetWalletRate(mNativeBraveRewardsNativeWorker);
         }
     }
 
@@ -357,9 +357,9 @@ public class BraveRewardsNativeWorker {
         }
     }
 
-    public void GetAutoContributeProps() {
+    public void GetAutoContributeProperties() {
         synchronized(lock) {
-            nativeGetAutoContributeProps(mNativeBraveRewardsNativeWorker);
+            nativeGetAutoContributeProperties(mNativeBraveRewardsNativeWorker);
         }
     }
 
@@ -457,6 +457,13 @@ public class BraveRewardsNativeWorker {
     }
 
     @CalledByNative
+    public void OnRewardsParameters(int errorCode) {
+        for (BraveRewardsObserver observer : mObservers) {
+            observer.OnRewardsParameters(errorCode);
+        }
+    }
+
+    @CalledByNative
     public void OnIsWalletCreated(boolean created) {
         for (BraveRewardsObserver observer : mObservers) {
             observer.OnIsWalletCreated(created);
@@ -509,13 +516,6 @@ public class BraveRewardsNativeWorker {
     }
 
     @CalledByNative
-    public void OnWalletProperties(int error_code) {
-        for (BraveRewardsObserver observer : mObservers) {
-            observer.OnWalletProperties(error_code);
-        }
-    }
-
-    @CalledByNative
     public void OnNotificationAdded(String id, int type, long timestamp,
             String[] args) {
         for (BraveRewardsObserver observer : mObservers) {
@@ -553,9 +553,9 @@ public class BraveRewardsNativeWorker {
     }
 
     @CalledByNative
-    public void OnGetAutoContributeProps() {
+    public void OnGetAutoContributeProperties() {
         for (BraveRewardsObserver observer : mObservers) {
-            observer.OnGetAutoContributeProps();
+            observer.OnGetAutoContributeProperties();
         }
     }
 
@@ -643,9 +643,8 @@ public class BraveRewardsNativeWorker {
     private native void nativeDestroy(long nativeBraveRewardsNativeWorker);
     private native void nativeCreateWallet(long nativeBraveRewardsNativeWorker);
     private native void nativeWalletExist(long nativeBraveRewardsNativeWorker);
-    private native void nativeGetWalletProperties(long nativeBraveRewardsNativeWorker);
     private native String nativeGetWalletBalance(long nativeBraveRewardsNativeWorker);
-    private native double nativeGetWalletRate(long nativeBraveRewardsNativeWorker, String rate);
+    private native double nativeGetWalletRate(long nativeBraveRewardsNativeWorker);
     private native void nativeGetPublisherInfo(long nativeBraveRewardsNativeWorker, int tabId, String host);
     private native String nativeGetPublisherURL(long nativeBraveRewardsNativeWorker, int tabId);
     private native String nativeGetPublisherFavIconURL(long nativeBraveRewardsNativeWorker, int tabId);
@@ -672,7 +671,7 @@ public class BraveRewardsNativeWorker {
         String publisher);
     private native void nativeGetRewardsMainEnabled(long nativeBraveRewardsNativeWorker);
     private native void nativeSetRewardsMainEnabled(long nativeBraveRewardsNativeWorker, boolean enabled);
-    private native void nativeGetAutoContributeProps(long nativeBraveRewardsNativeWorker);
+    private native void nativeGetAutoContributeProperties(long nativeBraveRewardsNativeWorker);
     private native boolean nativeIsAutoContributeEnabled(long nativeBraveRewardsNativeWorker);
     private native void nativeGetReconcileStamp(long nativeBraveRewardsNativeWorker);
     private native double nativeGetPublisherRecurrentDonationAmount(long nativeBraveRewardsNativeWorker, String publisher);
@@ -686,4 +685,5 @@ public class BraveRewardsNativeWorker {
     private native void nativeDisconnectWallet(long nativeBraveRewardsNativeWorker, String wallet_type);
     private native void nativeProcessRewardsPageUrl(long nativeBraveRewardsNativeWorker, String path, String query);
     private native void nativeRecoverWallet(long nativeBraveRewardsNativeWorker, String passPhrase);
+    private native void nativeGetRewardsParameters(long nativeBraveRewardsNativeWorker);
 }

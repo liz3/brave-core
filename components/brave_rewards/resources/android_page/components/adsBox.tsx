@@ -80,8 +80,8 @@ class AdsBox extends React.Component<Props, {}> {
     const {
       adsData,
       enabledMain,
-      balance,
-      safetyNetFailed
+      safetyNetFailed,
+      parameters
     } = this.props.rewardsData
     const { onlyAnonWallet } = this.props.rewardsData.ui
 
@@ -132,8 +132,8 @@ class AdsBox extends React.Component<Props, {}> {
           <StyledTotalContent>
             <Tokens
               onlyAnonWallet={onlyAnonWallet}
-              value={estimatedPendingRewards.toFixed(1)}
-              converted={utils.convertBalance(estimatedPendingRewards, balance.rates)}
+              value={estimatedPendingRewards.toFixed(3)}
+              converted={utils.convertBalance(estimatedPendingRewards, parameters.rate)}
             />
           </StyledTotalContent>
         </List>

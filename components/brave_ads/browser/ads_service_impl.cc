@@ -107,8 +107,8 @@ int GetSchemaResourceId(
 
 static std::map<std::string, int> g_user_model_resource_ids = {
   {"en", IDR_ADS_USER_MODEL_EN},
-  {"de", IDR_ADS_USER_MODEL_DE},
-  {"fr", IDR_ADS_USER_MODEL_FR},
+  {"de", IDR_ADS_USER_MODEL_EN},
+  {"fr", IDR_ADS_USER_MODEL_EN},
 };
 
 int GetUserModelResourceId(
@@ -556,8 +556,6 @@ void AdsServiceImpl::OnShutdownBatAds(
   }
 
   Shutdown();
-
-  ResetAllState();
 
   VLOG(1) << "Successfully shutdown ads";
 }
@@ -2058,11 +2056,21 @@ void AdsServiceImpl::GetAdConversions(
           std::move(callback)));
 }
 
+void AdsServiceImpl::DiagnosticLog(
+    const std::string& file,
+    const int line,
+    const int verbose_level,
+    const std::string& message) {
+  rewards_service_->DiagnosticLog(file, line, verbose_level, message);
+}
+
 void AdsServiceImpl::Log(
     const char* file,
     const int line,
     const int verbose_level,
-    const std::string& message) const {
+    const std::string& message) {
+  DiagnosticLog(file, line, verbose_level, message);
+
   const int vlog_level = ::logging::GetVlogLevelHelper(file, strlen(file));
   if (verbose_level <= vlog_level) {
     ::logging::LogMessage(file, line, -verbose_level).stream() << message;

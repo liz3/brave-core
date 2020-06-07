@@ -55,7 +55,7 @@ class RewardsTipDOMHandler : public WebUIMessageHandler,
 
  private:
   void GetPublisherTipData(const base::ListValue* args);
-  void GetWalletProperties(const base::ListValue* args);
+  void GetRewardsParameters(const base::ListValue* args);
   void OnTip(const base::ListValue* args);
   void GetRecurringTips(const base::ListValue* args);
   void GetReconcileStamp(const base::ListValue* args);
@@ -79,13 +79,10 @@ class RewardsTipDOMHandler : public WebUIMessageHandler,
     int32_t result,
     std::unique_ptr<brave_rewards::Balance> balance);
 
-  // RewardsServiceObserver implementation
-  void OnWalletProperties(
-      brave_rewards::RewardsService* rewards_service,
-      int error_code,
-      std::unique_ptr<brave_rewards::WalletProperties> wallet_properties)
-      override;
+  void OnGetRewardsParameters(
+      std::unique_ptr<brave_rewards::RewardsParameters> parameters);
 
+  // RewardsServiceObserver implementation
   void OnRecurringTipSaved(brave_rewards::RewardsService* rewards_service,
                            bool success) override;
 
@@ -126,8 +123,8 @@ void RewardsTipDOMHandler::RegisterMessages() {
       base::BindRepeating(&RewardsTipDOMHandler::GetPublisherTipData,
                           base::Unretained(this)));
   web_ui()->RegisterMessageCallback(
-      "brave_rewards_tip.getWalletProperties",
-      base::BindRepeating(&RewardsTipDOMHandler::GetWalletProperties,
+      "brave_rewards_tip.getRewardsParameters",
+      base::BindRepeating(&RewardsTipDOMHandler::GetRewardsParameters,
                           base::Unretained(this)));
   web_ui()->RegisterMessageCallback(
       "brave_rewards_tip.onTip",
@@ -171,11 +168,13 @@ void RewardsTipDOMHandler::GetPublisherTipData(
                  weak_factory_.GetWeakPtr()));
 }
 
-void RewardsTipDOMHandler::GetWalletProperties(const base::ListValue* args) {
+void RewardsTipDOMHandler::GetRewardsParameters(const base::ListValue* args) {
   if (!rewards_service_)
     return;
 
-  rewards_service_->FetchWalletProperties();
+  rewards_service_->GetRewardsParameters(
+      base::Bind(&RewardsTipDOMHandler::OnGetRewardsParameters,
+                 weak_factory_.GetWeakPtr()));
 }
 
 static std::unique_ptr<base::ListValue> CreateListOfDoubles(
@@ -187,32 +186,24 @@ static std::unique_ptr<base::ListValue> CreateListOfDoubles(
   return result;
 }
 
-void RewardsTipDOMHandler::OnWalletProperties(
-    brave_rewards::RewardsService* rewards_service,
-    int error_code,
-    std::unique_ptr<brave_rewards::WalletProperties> wallet_properties) {
-
+void RewardsTipDOMHandler::OnGetRewardsParameters(
+    std::unique_ptr<brave_rewards::RewardsParameters> parameters) {
   if (!web_ui()->CanCallJavascript()) {
     return;
   }
 
-  base::DictionaryValue result;
-  result.SetInteger("status", error_code);
-  auto walletInfo = std::make_unique<base::DictionaryValue>();
+  base::DictionaryValue data;
 
-  if (error_code == 0 && wallet_properties) {
-    walletInfo->SetList("choices",
-        CreateListOfDoubles(wallet_properties->parameters_choices));
-    walletInfo->SetList("defaultTipChoices",
-        CreateListOfDoubles(wallet_properties->default_tip_choices));
-    walletInfo->SetList("defaultMonthlyTipChoices",
-        CreateListOfDoubles(wallet_properties->default_monthly_tip_choices));
+  if (parameters) {
+    data.SetDouble("rate", parameters->rate);
+    data.SetList("tipChoices",
+        CreateListOfDoubles(parameters->tip_choices));
+    data.SetList("monthlyTipChoices",
+        CreateListOfDoubles(parameters->monthly_tip_choices));
   }
 
-  result.SetDictionary("wallet", std::move(walletInfo));
-
   web_ui()->CallJavascriptFunctionUnsafe(
-      "brave_rewards_tip.walletProperties", result);
+      "brave_rewards_tip.rewardsParameters", data);
 }
 
 void RewardsTipDOMHandler::OnTip(const base::ListValue* args) {
@@ -417,12 +408,6 @@ void RewardsTipDOMHandler::OnFetchBalance(
 
     if (result == 0 && balance) {
       balance_value->SetDouble("total", balance->total);
-
-      auto rates = std::make_unique<base::DictionaryValue>();
-      for (auto const& rate : balance->rates) {
-        rates->SetDouble(rate.first, rate.second);
-      }
-      balance_value->SetDictionary("rates", std::move(rates));
 
       auto wallets = std::make_unique<base::DictionaryValue>();
       for (auto const& wallet : balance->wallets) {

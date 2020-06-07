@@ -53,6 +53,7 @@ declare namespace Rewards {
     firstLoad: boolean | null
     monthlyReport: MonthlyReport
     monthlyReportIds: string[]
+    parameters: RewardsParameters
     promotions?: Promotion[]
     pendingContributions: PendingContribution[]
     pendingContributionTotal: number
@@ -79,7 +80,12 @@ declare namespace Rewards {
     }
     walletCreated: boolean
     walletCreateFailed: boolean
-    walletInfo: WalletProperties
+  }
+
+  export interface RewardsParameters {
+    rate: number
+    autoContributeChoice: number
+    autoContributeChoices: number[]
   }
 
   export interface ComponentProps {
@@ -154,10 +160,6 @@ declare namespace Rewards {
   export interface PromotionResponse {
     result: number
     promotions: Promotion[]
-  }
-
-  export interface WalletProperties {
-    choices: number[]
   }
 
   export interface RecoverWallet {
@@ -259,7 +261,6 @@ declare namespace Rewards {
 
   export interface Balance {
     total: number
-    rates: Record<string, number>
     wallets: Record<string, number>
   }
 

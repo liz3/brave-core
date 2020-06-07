@@ -126,9 +126,6 @@ public class AppearancePreferences extends BravePreferenceFragment
     public void OnWalletInitialized(int error_code) {}
 
     @Override
-    public void OnWalletProperties(int error_code) {}
-
-    @Override
     public void OnPublisherInfo(int tabId) {}
 
     @Override
@@ -165,7 +162,7 @@ public class AppearancePreferences extends BravePreferenceFragment
     }
 
     @Override
-    public void OnGetAutoContributeProps() {}
+    public void OnGetAutoContributeProperties() {}
 
     @Override
     public void OnGetReconcileStamp(long timestamp) {}

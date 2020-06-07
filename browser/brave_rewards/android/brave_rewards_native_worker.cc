@@ -79,10 +79,12 @@ void BraveRewardsNativeWorker::CreateWallet(JNIEnv* env, const
 void BraveRewardsNativeWorker::OnCreateWallet(int32_t result) {
 }
 
-void BraveRewardsNativeWorker::GetWalletProperties(JNIEnv* env, const
+void BraveRewardsNativeWorker::GetRewardsParameters(JNIEnv* env, const
         base::android::JavaParamRef<jobject>& jcaller) {
   if (brave_rewards_service_) {
-    brave_rewards_service_->FetchWalletProperties();
+    brave_rewards_service_->GetRewardsParameters(
+        base::BindOnce(&BraveRewardsNativeWorker::OnGetRewardsParameters,
+                       base::Unretained(this), brave_rewards_service_));
   }
 }
 
@@ -233,23 +235,18 @@ void BraveRewardsNativeWorker::OnWalletInitialized(
         weak_java_brave_rewards_native_worker_.get(env), error_code);
 }
 
-void BraveRewardsNativeWorker::OnWalletProperties(
-    brave_rewards::RewardsService* rewards_service, int error_code,
-    std::unique_ptr<brave_rewards::WalletProperties> wallet_properties) {
-  if (wallet_properties) {
-    wallet_properties_ = *wallet_properties;
+void BraveRewardsNativeWorker::OnGetRewardsParameters(
+    brave_rewards::RewardsService* rewards_service,
+    std::unique_ptr<brave_rewards::RewardsParameters> parameters) {
+  if (parameters) {
+    parameters_ = *parameters;
   }
-  if (error_code == 0) {
-    if (rewards_service) {
-      rewards_service->FetchBalance(
-        base::Bind(
-          &BraveRewardsNativeWorker::OnBalance,
-          weak_factory_.GetWeakPtr()));
-    }
-  } else {
-    JNIEnv* env = base::android::AttachCurrentThread();
-    Java_BraveRewardsNativeWorker_OnWalletProperties(env,
-          weak_java_brave_rewards_native_worker_.get(env), error_code);
+
+  if (rewards_service) {
+    rewards_service->FetchBalance(
+      base::Bind(
+        &BraveRewardsNativeWorker::OnBalance,
+        weak_factory_.GetWeakPtr()));
   }
 }
 
@@ -261,8 +258,8 @@ void BraveRewardsNativeWorker::OnBalance(
   }
 
   JNIEnv* env = base::android::AttachCurrentThread();
-  Java_BraveRewardsNativeWorker_OnWalletProperties(env,
-        weak_java_brave_rewards_native_worker_.get(env), 0);
+  Java_BraveRewardsNativeWorker_OnRewardsParameters(
+      env, weak_java_brave_rewards_native_worker_.get(env), 0);
 }
 
 base::android::ScopedJavaLocalRef<jstring>
@@ -273,15 +270,8 @@ base::android::ScopedJavaLocalRef<jstring>
 }
 
 double BraveRewardsNativeWorker::GetWalletRate(JNIEnv* env,
-    const base::android::JavaParamRef<jobject>& obj,
-    const base::android::JavaParamRef<jstring>& rate) {
-  std::map<std::string, double>::const_iterator iter = balance_.rates.find(
-    base::android::ConvertJavaStringToUTF8(env, rate));
-  if (iter != balance_.rates.end()) {
-    return iter->second;
-  }
-
-  return 0.0;
+    const base::android::JavaParamRef<jobject>& obj) {
+  return parameters_.rate;
 }
 
 void BraveRewardsNativeWorker::WalletExist(JNIEnv* env,
@@ -460,25 +450,24 @@ bool BraveRewardsNativeWorker::IsCurrentPublisherInRecurrentDonations(
 }
 
 
-void BraveRewardsNativeWorker::GetAutoContributeProps(JNIEnv* env,
+void BraveRewardsNativeWorker::GetAutoContributeProperties(JNIEnv* env,
     const base::android::JavaParamRef<jobject>& obj) {
   if (brave_rewards_service_) {
-    brave_rewards_service_->GetAutoContributeProps(base::Bind(
-            &BraveRewardsNativeWorker::OnGetAutoContributeProps,
-            weak_factory_.GetWeakPtr()));
+    brave_rewards_service_->GetAutoContributeProperties(
+        base::Bind(&BraveRewardsNativeWorker::OnGetAutoContributeProperties,
+                   weak_factory_.GetWeakPtr()));
   }
 }
 
-
-void BraveRewardsNativeWorker::OnGetAutoContributeProps(
-        std::unique_ptr<brave_rewards::AutoContributeProps> props) {
+void BraveRewardsNativeWorker::OnGetAutoContributeProperties(
+    std::unique_ptr<brave_rewards::AutoContributeProps> props) {
   if (props) {
     auto_contrib_properties_ = *props;
   }
 
   JNIEnv* env = base::android::AttachCurrentThread();
-  Java_BraveRewardsNativeWorker_OnGetAutoContributeProps(env,
-    weak_java_brave_rewards_native_worker_.get(env));
+  Java_BraveRewardsNativeWorker_OnGetAutoContributeProperties(
+      env, weak_java_brave_rewards_native_worker_.get(env));
 }
 
 bool BraveRewardsNativeWorker::IsAutoContributeEnabled(JNIEnv* env,

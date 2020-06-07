@@ -85,7 +85,8 @@ class SettingsPage extends React.Component<Props, State> {
       this.actions.onSettingSave('firstLoad', false)
     }
 
-    this.actions.getWalletProperties()
+    this.actions.getRewardsParameters()
+    this.actions.getAutoContributeProperties()
     this.actions.getBalance()
     this.balanceTimerId = setInterval(() => {
       this.actions.getBalance()
@@ -178,10 +179,10 @@ class SettingsPage extends React.Component<Props, State> {
   }
 
   render () {
-    const { enabledMain, balance } = this.props.rewardsData
+    const { enabledMain, parameters, balance } = this.props.rewardsData
     const { onlyAnonWallet } = this.props.rewardsData.ui
     const { total } = balance
-    const convertedBalance = utils.convertBalance((total || 0), balance.rates)
+    const convertedBalance = utils.convertBalance((total || 0), parameters.rate)
 
     return (
       <SettingsPageMobile>
@@ -211,7 +212,7 @@ class SettingsPage extends React.Component<Props, State> {
         }
         <WalletInfoHeader
           onClick={this.onToggleWallet}
-          balance={total.toFixed(1).toString()}
+          balance={total.toFixed(3).toString()}
           id={'mobile-wallet'}
           onlyAnonWallet={onlyAnonWallet}
           converted={`${convertedBalance} USD`}

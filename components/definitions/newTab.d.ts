@@ -135,6 +135,7 @@ declare namespace NewTab {
     enabledAds: boolean
     enabledMain: boolean
     promotions: Promotion[]
+    parameters: RewardsParameters
     onlyAnonWallet: boolean
     totalContribution: number
     walletCreated: boolean
@@ -215,8 +216,12 @@ declare namespace NewTab {
 
   export interface RewardsBalance {
     total: number
-    rates: Record<string, number>
     wallets: Record<string, number>
+  }
+
+  export interface RewardsParameters {
+    rate: number
+    monthlyTipChoices: number[]
   }
 
   export interface DefaultSuperReferralTopSite {

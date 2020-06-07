@@ -27,18 +27,12 @@ class BatLedgerClientMojoProxy : public ledger::LedgerClient,
       mojom::BatLedgerClientAssociatedPtrInfo client_info);
   ~BatLedgerClientMojoProxy() override;
 
-  void OnWalletProperties(
-      ledger::Result result,
-      ledger::WalletPropertiesPtr properties) override;
   void OnReconcileComplete(ledger::Result result,
                            const std::string& contribution_id,
                            const double amount,
                            const ledger::RewardsType type) override;
   void LoadLedgerState(ledger::OnLoadCallback callback) override;
   void LoadPublisherState(ledger::OnLoadCallback callback) override;
-  void SaveLedgerState(
-      const std::string& ledger_state,
-      ledger::ResultCallback callback) override;
   void SetTimer(uint64_t time_offset, uint32_t* timer_id) override;
   void KillTimer(const uint32_t timer_id) override;
 
@@ -60,7 +54,7 @@ class BatLedgerClientMojoProxy : public ledger::LedgerClient,
       const char* file,
       const int line,
       const int verbose_level,
-      const std::string& message) const override;
+      const std::string& message) override;
 
   std::string URIEncode(const std::string& value) override;
 

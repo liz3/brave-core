@@ -26,9 +26,6 @@ class LedgerClientMojoProxy : public mojom::BatLedgerClient,
 
   // bat_ledger::mojom::BatLedgerClient
   void LoadLedgerState(LoadLedgerStateCallback callback) override;
-  void OnWalletProperties(
-      const ledger::Result result,
-      ledger::WalletPropertiesPtr properties) override;
   void OnReconcileComplete(
       const ledger::Result result,
       const std::string& contribution_id,
@@ -36,8 +33,6 @@ class LedgerClientMojoProxy : public mojom::BatLedgerClient,
       const ledger::RewardsType type) override;
 
   void LoadPublisherState(LoadPublisherStateCallback callback) override;
-  void SaveLedgerState(const std::string& ledger_state,
-      SaveLedgerStateCallback callback) override;
 
   void FetchFavIcon(const std::string& url, const std::string& favicon_key,
       FetchFavIconCallback callback) override;
@@ -181,10 +176,6 @@ class LedgerClientMojoProxy : public mojom::BatLedgerClient,
     base::WeakPtr<LedgerClientMojoProxy> client_;
     Callback callback_;
   };
-
-  static void OnSaveLedgerState(
-      CallbackHolder<SaveLedgerStateCallback>* holder,
-      const ledger::Result result);
 
   static void OnLoadLedgerState(
     CallbackHolder<LoadLedgerStateCallback>* holder,

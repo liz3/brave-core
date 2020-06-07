@@ -6,7 +6,7 @@
 #include <map>
 
 #include "base/files/scoped_temp_dir.h"
-#include "brave/components/brave_rewards/browser/wallet_properties.h"
+#include "brave/components/brave_rewards/browser/rewards_parameters.h"
 #include "brave/browser/brave_rewards/rewards_service_factory.h"
 #include "brave/components/brave_rewards/browser/rewards_service_impl.h"
 #include "brave/components/brave_rewards/browser/rewards_service_observer.h"
@@ -24,11 +24,7 @@ using ::testing::_;
 
 class MockRewardsServiceObserver : public RewardsServiceObserver {
  public:
-  MockRewardsServiceObserver() {}
   MOCK_METHOD2(OnWalletInitialized, void(RewardsService*, int32_t));
-  MOCK_METHOD3(OnWalletProperties, void(RewardsService*,
-      int,
-      std::unique_ptr<brave_rewards::WalletProperties>));
   MOCK_METHOD3(OnFetchPromotions, void(RewardsService*,
       const uint32_t,
       const std::vector<brave_rewards::Promotion>& list));
@@ -90,13 +86,6 @@ class RewardsServiceTest : public testing::Test {
   std::unique_ptr<MockRewardsServiceObserver> observer_;
   base::ScopedTempDir temp_dir_;
 };
-
-TEST_F(RewardsServiceTest, OnWalletProperties) {
-  // We always need to call observer as we report errors back even when we have
-  // null pointer
-  EXPECT_CALL(*observer(), OnWalletProperties(_, 1, _)).Times(1);
-  rewards_service()->OnWalletProperties(ledger::Result::LEDGER_ERROR, nullptr);
-}
 
 // add test for strange entries
 

@@ -166,7 +166,7 @@ class ContributeBox extends React.Component<Props, State> {
           <ControlWrapper text={getLocale('contributionMonthly')}>
             <Select
               onChange={this.onSelectSettingChange.bind(this, 'contributionMonthly')}
-              value={parseFloat((contributionMonthly.toString() || '0')).toFixed(1)}
+              value={parseFloat((contributionMonthly.toString() || '0')).toFixed(3)}
             >
               {
                 monthlyList.map((choice: MonthlyChoice) => {
@@ -223,16 +223,15 @@ class ContributeBox extends React.Component<Props, State> {
     const {
       firstLoad,
       enabledMain,
-      walletInfo,
+      parameters,
       contributionMonthly,
       enabledContribute,
       reconcileStamp,
       autoContributeList,
       excludedList,
-      balance,
       ui
     } = this.props.rewardsData
-    const monthlyList: MonthlyChoice[] = utils.generateContributionMonthly(walletInfo.choices, balance.rates)
+    const monthlyList: MonthlyChoice[] = utils.generateContributionMonthly(parameters)
     const contributeRows = this.getContributeRows(autoContributeList)
     const excludedRows = this.getExcludedRows(excludedList)
     const topRows = contributeRows.slice(0, 5)
@@ -272,7 +271,7 @@ class ContributeBox extends React.Component<Props, State> {
           <Select
             floating={true}
             onChange={this.onSelectSettingChange.bind(this, 'contributionMonthly')}
-            value={parseFloat((contributionMonthly.toString() || '0')).toFixed(1)}
+            value={parseFloat((contributionMonthly.toString() || '0')).toFixed(3)}
             showAllContents={true}
           >
             {

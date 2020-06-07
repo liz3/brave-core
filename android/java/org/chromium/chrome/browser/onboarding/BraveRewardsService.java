@@ -76,9 +76,6 @@ public class BraveRewardsService extends Service implements BraveRewardsObserver
     };
 
     @Override
-    public void OnWalletProperties(int error_code){};
-
-    @Override
     public void OnPublisherInfo(int tabId){};
 
     @Override
@@ -106,7 +103,7 @@ public class BraveRewardsService extends Service implements BraveRewardsObserver
     public void OnGetRewardsMainEnabled(boolean enabled){};
 
     @Override
-    public void OnGetAutoContributeProps(){};
+    public void OnGetAutoContributeProperties(){};
 
     @Override
     public void OnGetReconcileStamp(long timestamp){};

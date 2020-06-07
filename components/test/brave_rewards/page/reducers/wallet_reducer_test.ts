@@ -120,9 +120,6 @@ describe('wallet reducer', () => {
 
       const expectedState = {
         ...defaultState,
-        walletInfo: {
-          ...defaultState.walletInfo
-        },
         ui: {
           ...defaultState.ui,
           emptyWallet: false,
@@ -131,7 +128,6 @@ describe('wallet reducer', () => {
         },
         balance: {
           total: 5,
-          rates: {},
           wallets: {}
         }
       }

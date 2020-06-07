@@ -72,10 +72,6 @@ class LEDGER_EXPORT LedgerClient {
  public:
   virtual ~LedgerClient() = default;
 
-  virtual void OnWalletProperties(
-      Result result,
-      ledger::WalletPropertiesPtr properties) = 0;
-
   virtual void OnReconcileComplete(
       const Result result,
       const std::string& contribution_id,
@@ -83,10 +79,6 @@ class LEDGER_EXPORT LedgerClient {
       const ledger::RewardsType type) = 0;
 
   virtual void LoadLedgerState(OnLoadCallback callback) = 0;
-
-  virtual void SaveLedgerState(
-      const std::string& ledger_state,
-      ResultCallback callback) = 0;
 
   virtual void LoadPublisherState(OnLoadCallback callback) = 0;
 
@@ -120,7 +112,7 @@ class LEDGER_EXPORT LedgerClient {
       const char* file,
       const int line,
       const int verbose_level,
-      const std::string& message) const = 0;
+      const std::string& message) = 0;
 
   virtual void PublisherListNormalized(ledger::PublisherInfoList list) = 0;
 

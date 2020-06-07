@@ -27,7 +27,7 @@
 #include "brave/components/brave_rewards/browser/rewards_service.h"
 #include "brave/browser/brave_rewards/rewards_service_factory.h"
 #include "brave/components/brave_rewards/browser/rewards_service_observer.h"
-#include "brave/components/brave_rewards/browser/wallet_properties.h"
+#include "brave/components/brave_rewards/browser/rewards_parameters.h"
 #include "chrome/browser/profiles/profile.h"
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/web_contents.h"
@@ -69,7 +69,8 @@ class RewardsDOMHandler : public WebUIMessageHandler,
 
  private:
   void HandleCreateWalletRequested(const base::ListValue* args);
-  void GetWalletProperties(const base::ListValue* args);
+  void GetRewardsParameters(const base::ListValue* args);
+  void GetAutoContributeProperties(const base::ListValue* args);
   void FetchPromotions(const base::ListValue* args);
   void ClaimPromotion(const base::ListValue* args);
   void AttestPromotion(const base::ListValue* args);
@@ -86,7 +87,7 @@ class RewardsDOMHandler : public WebUIMessageHandler,
   void RestorePublishers(const base::ListValue* args);
   void RestorePublisher(const base::ListValue* args);
   void WalletExists(const base::ListValue* args);
-  void GetContributionAmount(const base::ListValue* args);
+  void GetAutoContributionAmount(const base::ListValue* args);
   void RemoveRecurringTip(const base::ListValue* args);
   void GetRecurringTips(const base::ListValue* args);
   void GetOneTimeTips(const base::ListValue* args);
@@ -122,13 +123,13 @@ class RewardsDOMHandler : public WebUIMessageHandler,
   void SetBackupCompleted(const base::ListValue* args);
   void OnGetWalletPassphrase(const std::string& pass);
   void OnGetContributionAmount(double amount);
-  void OnGetAutoContributeProps(
-      int error_code,
-      std::unique_ptr<brave_rewards::WalletProperties> wallet_properties,
-      std::unique_ptr<brave_rewards::AutoContributeProps> auto_contri_props);
+  void OnGetAutoContributeProperties(
+      std::unique_ptr<brave_rewards::AutoContributeProps>
+          auto_contribute_props);
   void OnGetReconcileStamp(uint64_t reconcile_stamp);
   void OnAutoContributePropsReady(
-      std::unique_ptr<brave_rewards::AutoContributeProps> auto_contri_props);
+      std::unique_ptr<brave_rewards::AutoContributeProps>
+          auto_contribute_props);
   void OnIsWalletCreated(bool created);
   void GetPendingContributionsTotal(const base::ListValue* args);
   void OnGetPendingContributionsTotal(double amount);
@@ -150,7 +151,7 @@ class RewardsDOMHandler : public WebUIMessageHandler,
   void OnGetOneTimeTips(
     std::unique_ptr<brave_rewards::ContentSiteList> list);
 
-  void SetInlineTipSetting(const base::ListValue* args);
+  void SetInlineTippingPlatformEnabled(const base::ListValue* args);
 
   void GetPendingContributions(const base::ListValue* args);
   void OnGetPendingContributions(
@@ -198,14 +199,12 @@ class RewardsDOMHandler : public WebUIMessageHandler,
 
   void OnGetAllMonthlyReportIds(const std::vector<std::string>& ids);
 
+  void OnGetRewardsParameters(
+      std::unique_ptr<brave_rewards::RewardsParameters> parameters);
+
   // RewardsServiceObserver implementation
   void OnWalletInitialized(brave_rewards::RewardsService* rewards_service,
                        int32_t result) override;
-  void OnWalletProperties(
-      brave_rewards::RewardsService* rewards_service,
-      int error_code,
-      std::unique_ptr<brave_rewards::WalletProperties>
-      wallet_properties) override;
   void OnFetchPromotions(
       brave_rewards::RewardsService* rewards_service,
       const uint32_t result,
@@ -329,8 +328,11 @@ void RewardsDOMHandler::RegisterMessages() {
   web_ui()->RegisterMessageCallback("brave_rewards.createWalletRequested",
       base::BindRepeating(&RewardsDOMHandler::HandleCreateWalletRequested,
       base::Unretained(this)));
-  web_ui()->RegisterMessageCallback("brave_rewards.getWalletProperties",
-      base::BindRepeating(&RewardsDOMHandler::GetWalletProperties,
+  web_ui()->RegisterMessageCallback("brave_rewards.getRewardsParameters",
+      base::BindRepeating(&RewardsDOMHandler::GetRewardsParameters,
+      base::Unretained(this)));
+  web_ui()->RegisterMessageCallback("brave_rewards.getAutoContributeProperties",
+      base::BindRepeating(&RewardsDOMHandler::GetAutoContributeProperties,
       base::Unretained(this)));
   web_ui()->RegisterMessageCallback("brave_rewards.fetchPromotions",
       base::BindRepeating(&RewardsDOMHandler::FetchPromotions,
@@ -369,7 +371,7 @@ void RewardsDOMHandler::RegisterMessages() {
       base::BindRepeating(&RewardsDOMHandler::WalletExists,
       base::Unretained(this)));
   web_ui()->RegisterMessageCallback("brave_rewards.getContributionAmount",
-      base::BindRepeating(&RewardsDOMHandler::GetContributionAmount,
+      base::BindRepeating(&RewardsDOMHandler::GetAutoContributionAmount,
       base::Unretained(this)));
   web_ui()->RegisterMessageCallback("brave_rewards.removeRecurringTip",
       base::BindRepeating(&RewardsDOMHandler::RemoveRecurringTip,
@@ -425,8 +427,9 @@ void RewardsDOMHandler::RegisterMessages() {
   web_ui()->RegisterMessageCallback("brave_rewards.getRewardsMainEnabled",
       base::BindRepeating(&RewardsDOMHandler::GetRewardsMainEnabled,
       base::Unretained(this)));
-  web_ui()->RegisterMessageCallback("brave_rewards.setInlineTipSetting",
-      base::BindRepeating(&RewardsDOMHandler::SetInlineTipSetting,
+  web_ui()->RegisterMessageCallback(
+      "brave_rewards.setInlineTippingPlatformEnabled",
+      base::BindRepeating(&RewardsDOMHandler::SetInlineTippingPlatformEnabled,
       base::Unretained(this)));
   web_ui()->RegisterMessageCallback("brave_rewards.getPendingContributions",
       base::BindRepeating(&RewardsDOMHandler::GetPendingContributions,
@@ -492,11 +495,34 @@ void RewardsDOMHandler::HandleCreateWalletRequested(
                      rewards_service_));
 }
 
-void RewardsDOMHandler::GetWalletProperties(const base::ListValue* args) {
+void RewardsDOMHandler::GetRewardsParameters(const base::ListValue* args) {
   if (!rewards_service_)
     return;
 
-  rewards_service_->FetchWalletProperties();
+  rewards_service_->GetRewardsParameters(
+      base::BindOnce(&RewardsDOMHandler::OnGetRewardsParameters,
+                     weak_factory_.GetWeakPtr()));
+}
+
+void RewardsDOMHandler::OnGetRewardsParameters(
+    std::unique_ptr<brave_rewards::RewardsParameters> parameters) {
+  if (!web_ui()->CanCallJavascript()) {
+    return;
+  }
+
+  base::DictionaryValue data;
+  if (parameters) {
+    auto choices = std::make_unique<base::ListValue>();
+    for (double const& choice : parameters->auto_contribute_choices) {
+      choices->AppendDouble(choice);
+    }
+
+    data.SetDouble("rate", parameters->rate);
+    data.SetDouble("autoContributeChoice", parameters->auto_contribute_choice);
+    data.SetList("autoContributeChoices", std::move(choices));
+  }
+  web_ui()->CallJavascriptFunctionUnsafe(
+        "brave_rewards.rewardsParameters", data);
 }
 
 void RewardsDOMHandler::OnWalletInitialized(
@@ -514,57 +540,36 @@ void RewardsDOMHandler::OnWalletInitialized(
   }
 }
 
-void RewardsDOMHandler::OnGetAutoContributeProps(
-    int error_code,
-    std::unique_ptr<brave_rewards::WalletProperties> wallet_properties,
-    std::unique_ptr<brave_rewards::AutoContributeProps> auto_contri_props) {
-  if (web_ui()->CanCallJavascript()) {
-    base::DictionaryValue values;
-    values.SetBoolean("enabledContribute",
-        auto_contri_props->enabled_contribute);
-    values.SetInteger("contributionMinTime",
-        auto_contri_props->contribution_min_time);
-    values.SetInteger("contributionMinVisits",
-        auto_contri_props->contribution_min_visits);
-    values.SetBoolean("contributionNonVerified",
-        auto_contri_props->contribution_non_verified);
-    values.SetBoolean("contributionVideos",
-        auto_contri_props->contribution_videos);
+void RewardsDOMHandler::GetAutoContributeProperties(
+    const base::ListValue* args) {
+  if (!rewards_service_)
+    return;
 
-    base::DictionaryValue result;
-    result.SetInteger("status", error_code);
-    auto walletInfo = std::make_unique<base::DictionaryValue>();
-
-    if (error_code == 0 && wallet_properties) {
-      auto choices = std::make_unique<base::ListValue>();
-      for (double const& choice : wallet_properties->parameters_choices) {
-        choices->AppendDouble(choice);
-      }
-      walletInfo->SetList("choices", std::move(choices));
-
-      result.SetDouble("monthlyAmount", wallet_properties->monthly_amount);
-    }
-
-    // TODO(Nejc Zdovc): this needs to be moved out of this flow, because now we
-    // set this values every minute
-    web_ui()->CallJavascriptFunctionUnsafe(
-      "brave_rewards.initAutoContributeSettings", values);
-
-    result.SetDictionary("wallet", std::move(walletInfo));
-
-    web_ui()->CallJavascriptFunctionUnsafe(
-        "brave_rewards.walletProperties", result);
-  }
+  rewards_service_->GetAutoContributeProperties(
+      base::Bind(&RewardsDOMHandler::OnGetAutoContributeProperties,
+          weak_factory_.GetWeakPtr()));
 }
 
-void RewardsDOMHandler::OnWalletProperties(
-    brave_rewards::RewardsService* rewards_service,
-    int error_code,
-    std::unique_ptr<brave_rewards::WalletProperties> wallet_properties) {
-  rewards_service->GetAutoContributeProps(
-      base::Bind(&RewardsDOMHandler::OnGetAutoContributeProps,
-        weak_factory_.GetWeakPtr(), error_code,
-        base::Passed(std::move(wallet_properties))));
+void RewardsDOMHandler::OnGetAutoContributeProperties(
+    std::unique_ptr<brave_rewards::AutoContributeProps> auto_contribute_props) {
+  if (!web_ui()->CanCallJavascript()) {
+    return;
+  }
+
+  base::DictionaryValue values;
+  values.SetBoolean("enabledContribute",
+      auto_contribute_props->enabled_contribute);
+  values.SetInteger("contributionMinTime",
+      auto_contribute_props->contribution_min_time);
+  values.SetInteger("contributionMinVisits",
+      auto_contribute_props->contribution_min_visits);
+  values.SetBoolean("contributionNonVerified",
+      auto_contribute_props->contribution_non_verified);
+  values.SetBoolean("contributionVideos",
+      auto_contribute_props->contribution_videos);
+
+  web_ui()->CallJavascriptFunctionUnsafe(
+    "brave_rewards.autoContributeProperties", values);
 }
 
 void RewardsDOMHandler::OnFetchPromotions(
@@ -773,7 +778,7 @@ void RewardsDOMHandler::OnAutoContributePropsReady(
 
 void RewardsDOMHandler::OnContentSiteUpdated(
     brave_rewards::RewardsService* rewards_service) {
-  rewards_service_->GetAutoContributeProps(
+  rewards_service_->GetAutoContributeProperties(
       base::Bind(&RewardsDOMHandler::OnAutoContributePropsReady,
         weak_factory_.GetWeakPtr()));
 }
@@ -842,8 +847,7 @@ void RewardsDOMHandler::SaveSetting(const base::ListValue* args) {
     }
 
     if (key == "contributionMonthly") {
-      rewards_service_->SetUserChangedContribution();
-      rewards_service_->SetContributionAmount(std::stod(value));
+      rewards_service_->SetAutoContributionAmount(std::stod(value));
     }
 
     if (key == "contributionMinTime") {
@@ -875,7 +879,7 @@ void RewardsDOMHandler::SaveSetting(const base::ListValue* args) {
     }
 
     if (key == "enabledContribute") {
-      rewards_service_->SetAutoContribute(value == "true");
+      rewards_service_->SetAutoContributeEnabled(value == "true");
     }
   }
 }
@@ -979,9 +983,9 @@ void RewardsDOMHandler::OnGetContributionAmount(double amount) {
   }
 }
 
-void RewardsDOMHandler::GetContributionAmount(const base::ListValue* args) {
+void RewardsDOMHandler::GetAutoContributionAmount(const base::ListValue* args) {
   if (rewards_service_)
-    rewards_service_->GetContributionAmount(
+    rewards_service_->GetAutoContributionAmount(
         base::Bind(&RewardsDOMHandler::OnGetContributionAmount,
           weak_factory_.GetWeakPtr()));
 }
@@ -1452,7 +1456,8 @@ void RewardsDOMHandler::OnRecurringTipRemoved(
       "brave_rewards.recurringTipRemoved", base::Value(success));
 }
 
-void RewardsDOMHandler::SetInlineTipSetting(const base::ListValue* args) {
+void RewardsDOMHandler::SetInlineTippingPlatformEnabled(
+    const base::ListValue* args) {
   std::string key;
   args->GetString(0, &key);
 
@@ -1460,7 +1465,7 @@ void RewardsDOMHandler::SetInlineTipSetting(const base::ListValue* args) {
   args->GetString(1, &value);
 
   if (rewards_service_) {
-    rewards_service_->SetInlineTipSetting(key, value == "true");
+    rewards_service_->SetInlineTippingPlatformEnabled(key, value == "true");
   }
 }
 
@@ -1543,12 +1548,6 @@ void RewardsDOMHandler::OnFetchBalance(
     balance_value.SetDoubleKey("total", balance->total);
 
     if (result == 0) {
-      base::Value rates(base::Value::Type::DICTIONARY);
-      for (auto const& rate : balance->rates) {
-        rates.SetDoubleKey(rate.first, rate.second);
-      }
-      balance_value.SetKey("rates", std::move(rates));
-
       base::Value wallets(base::Value::Type::DICTIONARY);
       for (auto const& wallet : balance->wallets) {
         wallets.SetDoubleKey(wallet.first, wallet.second);

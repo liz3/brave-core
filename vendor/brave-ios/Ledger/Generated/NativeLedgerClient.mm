@@ -35,7 +35,7 @@ void NativeLedgerClient::LoadState(const std::string & name, ledger::OnLoadCallb
 void NativeLedgerClient::LoadURL(const std::string & url, const std::vector<std::string> & headers, const std::string & content, const std::string & contentType, const ledger::UrlMethod method, ledger::LoadURLCallback callback) {
   [bridge_ loadURL:url headers:headers content:content contentType:contentType method:method callback:callback];
 }
-void NativeLedgerClient::Log(const char * file, const int line, const int verbose_level, const std::string & message) const {
+void NativeLedgerClient::Log(const char * file, const int line, const int verbose_level, const std::string & message) {
   [bridge_ log:file line:line verboseLevel:verbose_level message:message];
 }
 void NativeLedgerClient::OnPanelPublisherInfo(ledger::Result result, ledger::PublisherInfoPtr publisher_info, uint64_t windowId) {
@@ -44,14 +44,8 @@ void NativeLedgerClient::OnPanelPublisherInfo(ledger::Result result, ledger::Pub
 void NativeLedgerClient::OnReconcileComplete(ledger::Result result, const std::string & viewing_id, const double amount, const ledger::RewardsType type) {
   [bridge_ onReconcileComplete:result viewingId:viewing_id type:type amount:amount];
 }
-void NativeLedgerClient::OnWalletProperties(ledger::Result result, ledger::WalletPropertiesPtr arg1) {
-  [bridge_ onWalletProperties:result arg1:std::move(arg1)];
-}
 void NativeLedgerClient::ResetState(const std::string & name, ledger::ResultCallback callback) {
   [bridge_ resetState:name callback:callback];
-}
-void NativeLedgerClient::SaveLedgerState(const std::string & ledger_state, ledger::ResultCallback callback) {
-  [bridge_ saveLedgerState:ledger_state callback:callback];
 }
 void NativeLedgerClient::PublisherListNormalized(ledger::PublisherInfoList list) {
   [bridge_ publisherListNormalized:std::move(list)];

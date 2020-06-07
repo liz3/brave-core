@@ -30,61 +30,17 @@ void ExtensionRewardsServiceObserver::OnWalletInitialized(
     int32_t result) {
   auto* event_router = extensions::EventRouter::Get(profile_);
 
-  auto converted_result = static_cast<ledger::Result>(result);
-
-  // Don't report back if there is no ledger file
-  if (event_router && converted_result != ledger::Result::NO_LEDGER_STATE) {
-    std::unique_ptr<base::ListValue> args(
-        extensions::api::brave_rewards::OnWalletInitialized::Create(
-          result).release());
-
-    std::unique_ptr<extensions::Event> event(new extensions::Event(
-        extensions::events::BRAVE_START,
-        extensions::api::brave_rewards::OnWalletInitialized::kEventName,
-        std::move(args)));
-    event_router->BroadcastEvent(std::move(event));
-  }
-}
-
-void ExtensionRewardsServiceObserver::OnWalletProperties(
-    RewardsService* rewards_service,
-    int error_code,
-    std::unique_ptr<brave_rewards::WalletProperties> wallet_properties) {
-  auto* event_router =
-      extensions::EventRouter::Get(profile_);
   if (!event_router) {
     return;
   }
 
-  if (error_code == 17) {  // ledger::Result::CORRUPT_WALLET
-    std::unique_ptr<base::ListValue> args(
-        extensions::api::brave_rewards::OnWalletInitialized::Create(
-          error_code).release());
-    std::unique_ptr<extensions::Event> event(new extensions::Event(
-        extensions::events::BRAVE_START,
-        extensions::api::brave_rewards::OnWalletInitialized::kEventName,
-        std::move(args)));
-    event_router->BroadcastEvent(std::move(event));
-    return;
-  }
-
-  if (!wallet_properties) {
-    return;
-  }
-
-  extensions::api::brave_rewards::OnWalletProperties::Properties properties;
-
-  properties.default_tip_choices = wallet_properties->default_tip_choices;
-  properties.default_monthly_tip_choices =
-      wallet_properties->default_monthly_tip_choices;
-
   std::unique_ptr<base::ListValue> args(
-      extensions::api::brave_rewards::OnWalletProperties::Create(properties)
-          .release());
+      extensions::api::brave_rewards::OnWalletInitialized::Create(
+        result).release());
 
   std::unique_ptr<extensions::Event> event(new extensions::Event(
-      extensions::events::BRAVE_ON_WALLET_PROPERTIES,
-      extensions::api::brave_rewards::OnWalletProperties::kEventName,
+      extensions::events::BRAVE_START,
+      extensions::api::brave_rewards::OnWalletInitialized::kEventName,
       std::move(args)));
   event_router->BroadcastEvent(std::move(event));
 }

@@ -8,44 +8,36 @@ import { convertBalance, handleContributionAmount } from '../../../../brave_rewa
 describe('Rewards Panel extension - Utils', () => {
   describe('convertBalance', () => {
     it('token has letters', () => {
-      expect(convertBalance('test', { 'USD': 10 })).toBe('0.00')
+      expect(convertBalance('test', 10)).toBe('0.00')
     })
 
-    it('rates are empty', () => {
-      expect(convertBalance('10', {})).toBe('0.00')
-    })
-
-    it('rate is missing', () => {
-      expect(convertBalance('10', { 'USD': 10 }, 'EUR')).toBe('0.00')
+    it('rate is 0', () => {
+      expect(convertBalance('10', 0)).toBe('0.00')
     })
 
     it('all good', () => {
-      expect(convertBalance('10', { 'USD': 10 })).toBe('100.00')
-    })
-
-    it('currency is provided', () => {
-      expect(convertBalance('10', { 'USD': 10, 'EUR': 4 }, 'EUR')).toBe('40.00')
+      expect(convertBalance('10', 10)).toBe('100.00')
     })
   })
 
   describe('handleContributionAmount', () => {
     it('amount is 0', () => {
-      expect(handleContributionAmount('0')).toBe('0.0')
+      expect(handleContributionAmount('0')).toBe('0.000')
     })
     it('amount is in wrong format', () => {
-      expect(handleContributionAmount('dasdfasdfasdf')).toBe('0.0')
+      expect(handleContributionAmount('dasdfasdfasdf')).toBe('0.000')
     })
     it('amount is probi', () => {
-      expect(handleContributionAmount('1000000000000000000')).toBe('1.0')
+      expect(handleContributionAmount('1000000000000000000')).toBe('1.000')
     })
     it('amount is probi', () => {
-      expect(handleContributionAmount('10454000000000000000')).toBe('10.5')
+      expect(handleContributionAmount('10454500000000000000')).toBe('10.455')
     })
     it('amount is double', () => {
-      expect(handleContributionAmount('10.454545')).toBe('10.5')
+      expect(handleContributionAmount('10.454545')).toBe('10.455')
     })
     it('amount is int', () => {
-      expect(handleContributionAmount('10')).toBe('10.0')
+      expect(handleContributionAmount('10')).toBe('10.000')
     })
   })
 })

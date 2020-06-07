@@ -15,7 +15,7 @@
 #include "brave/components/brave_rewards/browser/content_site.h"
 #include "brave/components/brave_rewards/browser/promotion.h"
 #include "brave/components/brave_rewards/browser/publisher_banner.h"
-#include "brave/components/brave_rewards/browser/wallet_properties.h"
+#include "brave/components/brave_rewards/browser/rewards_parameters.h"
 
 namespace brave_rewards {
 
@@ -28,10 +28,6 @@ class RewardsServiceObserver : public base::CheckedObserver {
   virtual void OnWalletInitialized(
       RewardsService* rewards_service,
       int32_t result) {}
-  virtual void OnWalletProperties(
-      RewardsService* rewards_service,
-      int error_code,
-      std::unique_ptr<brave_rewards::WalletProperties> properties) {}
   virtual void OnFetchPromotions(
       RewardsService* rewards_service,
       const uint32_t result,

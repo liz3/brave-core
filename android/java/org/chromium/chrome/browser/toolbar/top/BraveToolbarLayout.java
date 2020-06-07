@@ -497,9 +497,6 @@ public abstract class BraveToolbarLayout extends ToolbarLayout implements OnClic
   }
 
   @Override
-  public void OnWalletProperties(int error_code) {}
-
-  @Override
   public void OnPublisherInfo(int tabId) {}
 
   @Override
@@ -593,7 +590,7 @@ public abstract class BraveToolbarLayout extends ToolbarLayout implements OnClic
   }
 
   @Override
-  public void OnGetAutoContributeProps() {}
+  public void OnGetAutoContributeProperties() {}
 
   @Override
   public void OnGetReconcileStamp(long timestamp) {}
