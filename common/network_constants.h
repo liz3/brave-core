@@ -7,6 +7,7 @@
 #define BRAVE_COMMON_NETWORK_CONSTANTS_H_
 
 extern const char kBraveProxyPattern[];
+extern const char kBraveSoftwareProxyPattern[];
 extern const char kBraveUpdatesExtensionsProdEndpoint[];
 extern const char kBraveUpdatesExtensionsDevEndpoint[];
 
@@ -42,6 +43,7 @@ extern const char kCookieHeader[];
 extern const char kRefererHeader[];
 extern const char kUserAgentHeader[];
 extern const char kBravePartnerHeader[];
+extern const char kBraveServicesKeyHeader[];
 
 extern const char kBittorrentMimeType[];
 extern const char kOctetStreamMimeType[];

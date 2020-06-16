@@ -6,6 +6,7 @@
 #include "brave/common/network_constants.h"
 
 const char kBraveProxyPattern[] = "https://*.brave.com/*";
+const char kBraveSoftwareProxyPattern[] = "https://*.bravesoftware.com/*";
 const char kBraveUpdatesExtensionsProdEndpoint[] =
     "https://go-updater.brave.com/extensions";
 
@@ -61,6 +62,7 @@ const char kCookieHeader[] = "Cookie";
 const char kRefererHeader[] = "Referer";
 const char kUserAgentHeader[] = "User-Agent";
 const char kBravePartnerHeader[] = "X-Brave-Partner";
+const char kBraveServicesKeyHeader[] = "BraveServiceKey";
 
 const char kBittorrentMimeType[] = "application/x-bittorrent";
 const char kOctetStreamMimeType[] = "application/octet-stream";

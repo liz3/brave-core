@@ -144,6 +144,8 @@ test("brave_unit_tests") {
     "//chrome/browser/custom_handlers/test_protocol_handler_registry_delegate.h",
   ]
 
+  defines = brave_service_key_defines
+
   deps = [
     ":other_unit_tests",
     "//brave/browser/safebrowsing",
@@ -213,7 +215,6 @@ test("brave_unit_tests") {
       "../utility/importer/chrome_importer_unittest.cc",
 
       # TODO(samartnik): this should work on Android, we will review it once unit tests are set up on CI
-      "//brave/browser/autocomplete/brave_autocomplete_provider_client_unittest.cc",
       "//brave/browser/autoplay/autoplay_permission_context_unittest.cc",
       "//brave/components/brave_shields/browser/brave_shields_util_unittest.cc",
       "//brave/components/omnibox/browser/fake_autocomplete_provider_client.cc",
@@ -328,14 +329,9 @@ test("brave_unit_tests") {
 
   if (enable_brave_sync) {
     sources += [
-      "//brave/components/brave_sync/bookmark_order_util_unittest.cc",
-      "//brave/components/brave_sync/brave_sync_service_unittest.cc",
       "//brave/components/brave_sync/crypto/crypto_unittest.cc",
-      "//brave/components/brave_sync/syncer_helper_unittest.cc",
-    ]
-
-    deps += [
-      "//brave/components/brave_sync:testutil",
+      "//brave/components/sync/driver/brave_sync_auth_manager_unittest.cc",
+      "//components/sync/driver/sync_auth_manager_unittest.cc",
     ]
   }
 
@@ -498,6 +494,7 @@ test("brave_browser_tests") {
     "//brave/browser/extensions/brave_extension_provider_browsertest.cc",
     "//brave/browser/extensions/brave_theme_event_router_browsertest.cc",
     "//brave/browser/farbling/brave_webaudio_farbling_browsertest.cc",
+    "//brave/browser/farbling/brave_webgl_farbling_browsertest.cc",
     "//brave/browser/net/brave_network_delegate_browsertest.cc",
     "//brave/browser/net/brave_network_delegate_hsts_fingerprinting_browsertest.cc",
     "//brave/browser/net/brave_system_request_handler_browsertest.cc",
@@ -541,6 +538,7 @@ test("brave_browser_tests") {
     "//brave/components/brave_shields/browser/tracking_protection_service_browsertest.cc",
     "//brave/components/l10n/browser/locale_helper_mock.cc",
     "//brave/components/l10n/browser/locale_helper_mock.h",
+    "//brave/renderer/brave_content_settings_agent_impl_autoplay_browsertest.cc",
     "//brave/renderer/brave_content_settings_agent_impl_browsertest.cc",
     "//brave/renderer/brave_content_settings_agent_impl_flash_browsertest.cc",
     "//brave/third_party/blink/renderer/modules/brave/navigator_browsertest.cc",
@@ -550,8 +548,6 @@ test("brave_browser_tests") {
     "//chrome/browser/extensions/extension_browsertest.h",
     "//chrome/browser/extensions/extension_function_test_utils.cc",
     "//chrome/browser/extensions/extension_function_test_utils.h",
-    "//chrome/browser/media/media_browsertest.cc",
-    "//chrome/browser/media/media_browsertest.h",
     "//chrome/browser/ui/test/test_browser_dialog.cc",
     "//chrome/browser/ui/test/test_browser_dialog.h",
     "//chrome/browser/ui/test/test_browser_ui.cc",
@@ -605,12 +601,12 @@ test("brave_browser_tests") {
 
   if (brave_rewards_enabled) {
     sources += [
-      "//brave/components/brave_rewards/browser/rewards_notification_service_browsertest.cc",
-      "//brave/components/brave_rewards/browser/rewards_database_browsertest.cc",
-      "//brave/components/brave_rewards/browser/rewards_service_browsertest.cc",
-      "//brave/components/brave_rewards/browser/rewards_state_browsertest.cc",
-      "//brave/components/brave_rewards/browser/rewards_service_browsertest_utils.cc",
-      "//brave/components/brave_rewards/browser/rewards_service_browsertest_utils.h",
+      "//brave/components/brave_rewards/browser/test/rewards_browsertest.cc",
+      "//brave/components/brave_rewards/browser/test/rewards_browsertest_utils.cc",
+      "//brave/components/brave_rewards/browser/test/rewards_browsertest_utils.h",
+      "//brave/components/brave_rewards/browser/test/rewards_database_browsertest.cc",
+      "//brave/components/brave_rewards/browser/test/rewards_notification_browsertest.cc",
+      "//brave/components/brave_rewards/browser/test/rewards_state_browsertest.cc",
       "//brave/components/brave_ads/browser/ads_service_browsertest.cc",
       "//brave/components/brave_ads/browser/notification_helper_mock.cc",
       "//brave/components/brave_ads/browser/notification_helper_mock.h",

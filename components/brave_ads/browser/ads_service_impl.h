@@ -32,6 +32,7 @@
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
+#include "services/network/public/mojom/url_response_head.mojom.h"
 #include "ui/base/idle/idle.h"
 
 using brave_rewards::RewardsNotificationService;
@@ -140,12 +141,23 @@ class AdsServiceImpl : public AdsService,
   // AdsClient implementation
   bool IsEnabled() const override;
 
-  const std::string GetCountryCode() const override;
-
   bool ShouldAllowAdConversionTracking() const override;
 
   uint64_t GetAdsPerHour() const override;
   uint64_t GetAdsPerDay() const override;
+
+  bool ShouldAllowAdsSubdivisionTargeting() const override;
+  void SetAllowAdsSubdivisionTargeting(
+      const bool should_allow) override;
+
+  std::string GetAdsSubdivisionTargetingCode() const override;
+  void SetAdsSubdivisionTargetingCode(
+      const std::string& subdivision_targeting_code) override;
+
+  std::string
+  GetAutomaticallyDetectedAdsSubdivisionTargetingCode() const override;
+  void SetAutomaticallyDetectedAdsSubdivisionTargetingCode(
+      const std::string& subdivision_targeting_code) override;
 
   // KeyedService implementation
   void Shutdown() override;
@@ -217,7 +229,11 @@ class AdsServiceImpl : public AdsService,
   void NotificationTimedOut(
       const std::string& uuid);
 
-  void OnURLLoaderComplete(
+  void OnURLRequestStarted(
+      const GURL& final_url,
+      const network::mojom::URLResponseHead& response_head);
+
+  void OnURLRequestComplete(
       network::SimpleURLLoader* loader,
       ads::URLRequestCallback callback,
       const std::unique_ptr<std::string> response_body);

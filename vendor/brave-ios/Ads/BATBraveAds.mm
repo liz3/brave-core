@@ -14,7 +14,6 @@
 #import "NativeAdsClientBridge.h"
 #import "CppTransformations.h"
 #import "BATCommonOperations.h"
-#import "RewardsLogStream.h"
 
 #import <Network/Network.h>
 #import <UIKit/UIKit.h>
@@ -23,6 +22,8 @@
 
 #include "base/message_loop/message_loop_current.h"
 #include "base/task/single_thread_task_executor.h"
+
+#import "RewardsLogging.h"
 
 base::SingleThreadTaskExecutor* g_task_executor = nullptr;
 
@@ -36,6 +37,9 @@ static const NSInteger kDefaultNumberOfAdsPerHour = 2;
 static NSString * const kAdsEnabledPrefKey = @"BATAdsEnabled";
 static NSString * const kNumberOfAdsPerDayKey = @"BATNumberOfAdsPerDay";
 static NSString * const kNumberOfAdsPerHourKey = @"BATNumberOfAdsPerHour";
+static NSString * const kShouldAllowAdsSubdivisionTargetingPrefKey = @"BATShouldAllowAdsSubdivisionTargetingPrefKey";
+static NSString * const kAdsSubdivisionTargetingCodePrefKey = @"BATAdsSubdivisionTargetingCodePrefKey";
+static NSString * const kAutomaticallyDetectedAdsSubdivisionTargetingCodePrefKey = @"BATAutomaticallyDetectedAdsSubdivisionTargetingCodePrefKey";
 
 @interface BATAdNotification ()
 - (instancetype)initWithNotificationInfo:(const ads::AdNotificationInfo&)info;
@@ -75,6 +79,9 @@ static NSString * const kNumberOfAdsPerHourKey = @"BATNumberOfAdsPerHour";
       self.prefs = [[NSMutableDictionary alloc] init];
       self.numberOfAllowableAdsPerDay = kDefaultNumberOfAdsPerDay;
       self.numberOfAllowableAdsPerHour = kDefaultNumberOfAdsPerHour;
+      self.allowSubdivisionTargeting = false;
+      self.subdivisionTargetingCode = @"AUTO";
+      self.automaticallyDetectedSubdivisionTargetingCode = @"";
     }
 
     [self setupNetworkMonitoring];
@@ -166,7 +173,7 @@ BATClassAdsBridge(BOOL, isDebug, setDebug, _is_debug)
 
 - (BOOL)isEnabled
 {
-  return [(NSNumber *)self.prefs[kAdsEnabledPrefKey] boolValue];
+  return [self.prefs[kAdsEnabledPrefKey] boolValue];
 }
 
 - (void)setEnabled:(BOOL)enabled
@@ -187,7 +194,7 @@ BATClassAdsBridge(BOOL, isDebug, setDebug, _is_debug)
 
 - (NSInteger)numberOfAllowableAdsPerDay
 {
-  return [(NSNumber *)self.prefs[kNumberOfAdsPerDayKey] integerValue];
+  return [self.prefs[kNumberOfAdsPerDayKey] integerValue];
 }
 
 - (void)setNumberOfAllowableAdsPerDay:(NSInteger)numberOfAllowableAdsPerDay
@@ -198,12 +205,55 @@ BATClassAdsBridge(BOOL, isDebug, setDebug, _is_debug)
 
 - (NSInteger)numberOfAllowableAdsPerHour
 {
-  return [(NSNumber *)self.prefs[kNumberOfAdsPerHourKey] integerValue];
+  return [self.prefs[kNumberOfAdsPerHourKey] integerValue];
 }
 
 - (void)setNumberOfAllowableAdsPerHour:(NSInteger)numberOfAllowableAdsPerHour
 {
   self.prefs[kNumberOfAdsPerHourKey] = @(numberOfAllowableAdsPerHour);
+  [self savePrefs];
+}
+
+- (BOOL)shouldAllowSubdivisionTargeting
+{
+  return [self.prefs[kShouldAllowAdsSubdivisionTargetingPrefKey] boolValue];
+}
+
+- (void)setAllowSubdivisionTargeting:(BOOL)allowAdsSubdivisionTargeting
+{
+  self.prefs[kShouldAllowAdsSubdivisionTargetingPrefKey] = @(allowAdsSubdivisionTargeting);
+  [self savePrefs];
+}
+
+- (NSString *)subdivisionTargetingCode
+{
+  return (NSString *)self.prefs[kAdsSubdivisionTargetingCodePrefKey];
+}
+
+- (void)setSubdivisionTargetingCode:(NSString *)subdivisionTargetingCode
+{
+  const NSString* lastSubdivisionTargetingCode = [self subdivisionTargetingCode];
+
+  self.prefs[kAdsSubdivisionTargetingCodePrefKey] = subdivisionTargetingCode;
+  [self savePrefs];
+
+  if (lastSubdivisionTargetingCode == subdivisionTargetingCode) {
+    return;
+  }
+
+  if (![self isAdsServiceRunning]) { return; }
+
+  ads->OnAdsSubdivisionTargetingCodeHasChanged();
+}
+
+- (NSString *)automaticallyDetectedSubdivisionTargetingCode
+{
+  return (NSString *)self.prefs[kAutomaticallyDetectedAdsSubdivisionTargetingCodePrefKey];
+}
+
+- (void)setAutomaticallyDetectedSubdivisionTargetingCode:(NSString *)automaticallyDetectedSubdivisionTargetingCode
+{
+  self.prefs[kAutomaticallyDetectedAdsSubdivisionTargetingCodePrefKey] = automaticallyDetectedSubdivisionTargetingCode;
   [self savePrefs];
 }
 
@@ -548,7 +598,7 @@ BATClassAdsBridge(BOOL, isDebug, setDebug, _is_debug)
 
 - (void)log:(const char *)file line:(const int)line verboseLevel:(const int)verbose_level message:(const std::string &) message
 {
-  std::make_unique<RewardsLogStream>(file, line, verbose_level)->stream() << message << std::endl;
+  rewards::LogMessage(file, line, verbose_level, [NSString stringWithUTF8String:message.c_str()]);
 }
 
 #pragma mark - Notifications
@@ -581,6 +631,35 @@ BATClassAdsBridge(BOOL, isDebug, setDebug, _is_debug)
 {
   const auto bridgedId = [NSString stringWithUTF8String:id.c_str()];
   [self.notificationsHandler clearNotificationWithIdentifier:bridgedId];
+}
+
+- (bool)shouldAllowAdsSubdivisionTargeting {
+  return self.shouldAllowSubdivisionTargeting;
+}
+
+- (void)setAllowAdsSubdivisionTargeting:(const bool)should_allow
+{
+  self.allowSubdivisionTargeting = should_allow;
+}
+
+- (std::string)adsSubdivisionTargetingCode
+{
+  return std::string([self.subdivisionTargetingCode UTF8String]);
+}
+
+- (void)setAdsSubdivisionTargetingCode:(const std::string &)subdivision_targeting_code
+{
+  self.subdivisionTargetingCode = [NSString stringWithCString:subdivision_targeting_code.c_str() encoding:[NSString defaultCStringEncoding]];
+}
+
+- (std::string)automaticallyDetectedAdsSubdivisionTargetingCode
+{
+  return std::string([self.automaticallyDetectedSubdivisionTargetingCode UTF8String]);
+}
+
+- (void)setAutomaticallyDetectedAdsSubdivisionTargetingCode:(const std::string &)subdivision_targeting_code
+{
+  self.automaticallyDetectedSubdivisionTargetingCode = [NSString stringWithCString:subdivision_targeting_code.c_str() encoding:[NSString defaultCStringEncoding]];
 }
 
 @end

@@ -196,6 +196,7 @@ void BraveStatsUpdater::SendServerPing() {
       net::LOAD_DO_NOT_SEND_COOKIES | net::LOAD_DO_NOT_SAVE_COOKIES |
       net::LOAD_BYPASS_CACHE | net::LOAD_DISABLE_CACHE |
       net::LOAD_DO_NOT_SEND_AUTH_DATA;
+  resource_request->headers.SetHeader("X-Brave-API-Key", brave::GetAPIKey());
   network::mojom::URLLoaderFactory* loader_factory =
       g_browser_process->system_network_context_manager()
           ->GetURLLoaderFactory();

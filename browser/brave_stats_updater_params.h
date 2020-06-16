@@ -11,6 +11,7 @@
 #include "base/macros.h"
 #include "base/time/time.h"
 
+class BraveStatsUpdaterBrowserTest;
 class BraveStatsUpdaterTest;
 class PrefService;
 
@@ -36,6 +37,7 @@ class BraveStatsUpdaterParams {
   void SavePrefs();
 
  private:
+  friend class ::BraveStatsUpdaterBrowserTest;
   friend class ::BraveStatsUpdaterTest;
   PrefService* pref_service_;
   std::string ymd_;
@@ -50,8 +52,6 @@ class BraveStatsUpdaterParams {
   std::string referral_promo_code_;
   static base::Time g_current_time;
   static bool g_force_first_run;
-  static constexpr base::TimeDelta g_dtoi_delete_delta =
-      base::TimeDelta::FromSeconds(14 * 24 * 60 * 60);
 
   void LoadPrefs();
 
